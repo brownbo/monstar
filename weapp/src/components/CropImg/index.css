@@ -1,0 +1,4 @@
+:global(.crop){
+    display: flex;
+    justify-content: center;
+}

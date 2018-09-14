@@ -1,0 +1,132 @@
+/* 增加裁剪图片需要改动程序的地方
+ * @Author: zhengyinhua 
+ * @Date: 2018-04-26 10:58:34 
+ * @Last Modified by: zhengyinhua
+ * @Last Modified time: 2018-04-26 16:12:19
+ */
+
+
+1：-------------------------models-----------------------------
+
+【import】+
+//裁剪图片
+import {uploadFile} from '../services/uploadFile'
+
+
+【state】+
+
+//裁剪图片所需参数
+cropModalVisible:false,//裁剪窗口
+editorImg:'',//裁剪图片之前的data base64
+fileName:'',//裁剪图片名称
+oldFile:''//裁剪之前原图片，如果不裁剪直接传原图片上去
+
+【effects】+
+
+*注意！！修改banner=>当前models
+
+//裁剪图片上传函数
+* uploadCropImg ({payload}, {select, call, put}) {
+    const fileName = yield select(({banner})=>banner.fileName);
+    const fileList = yield select(({banner})=>banner.fileList);
+    const oldFile = yield select(({banner})=>banner.oldFile);
+    const data = yield call(uploadFile, {data:payload?payload:oldFile,fileName})
+    const newList = fileList.map(item=>{
+        if(item.status){
+        return item
+        }else{
+        return {
+            ...item,
+            status: 'done',
+            name: fileName,
+            url: data,
+            response:{success:true,url:data}
+        }
+        }
+    })
+    yield put({
+    type: 'updateState',
+    payload: {
+        fileList:newList,
+        cropModalVisible:false,
+        editorImg:'',
+        fileName:'',
+    },
+    })
+    message.success('上传成功!');
+},
+
+
+2.-------------------------routers-----------------------------
+
+**！！！！！！！
+   下面的所有 gift修改为当前models
+**！！！！！！！
+
+
+【detail.js】+ 
+一：improt：
+import Func from "../../utils/publicFunc"
+//裁剪图片
+import CropImg from '../../components/CropImg'
+
+二：class:
+handleChange：修改为
+handleChange = ({ file, fileList }) => {
+    if (file.status === 'removed') {
+        const fileList = this.props.gift.fileList.filter(item => item.status !== 'removed');
+        this.updateFile(fileList);
+    }
+}
+
+
+//阻止上传展示裁剪图片modal
+  beforeUpload = (file, files) => {
+    Func.readBlobAsDataURL(file, dataurl => {
+      this.showCropImg(dataurl,file, file.name);
+    });
+    return false;
+  }
+  //展示裁剪图片  
+  showCropImg = (data,file, name) => {
+    const fileList = this.props.gift.fileList.concat([file]);
+    this.props.dispatch({
+      type: `${this.api_name}/updateState`,
+      payload: { 
+        editorImg: data,
+        cropModalVisible: true,
+        fileName: name,
+        fileList,
+        oldFile:file,
+      }
+    })
+  }
+三：render:
+//裁剪图片组件所需参数
+const doneFile = fileList.filter(item=>item.status==='done')
+const cropImgProps = {
+    cropSize: doneFile.length===0?(1/1):(16/9), //裁剪比例
+    editorImg: this.props.gift.editorImg,
+    visible: this.props.gift.cropModalVisible,
+    maskClosable: false,
+    title: doneFile.length===0?"图片裁剪-比例(1:1)":'图片裁剪-比例(16:9)',
+    BtnOk: (data) => {
+        this.props.dispatch({ type: `${this.api_name}/uploadCropImg`, payload: data, })
+    },
+    onCancel: () => {
+        this.props.dispatch({
+            type: `${this.api_name}/updateState`,
+            payload: {
+            cropModalVisible: false, //隐藏裁剪框
+            fileList: fileList.filter(item => { return item.status }),
+            }
+        })
+    },
+}
+
+四：
+upload组件opts+    beforeUpload = {this.beforeUpload}
+增加组件 
+{cropImgProps.visible?<CropImg {...cropImgProps}/>:''}
+
+
