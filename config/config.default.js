@@ -44,25 +44,25 @@ module.exports = appInfo => {
   };
 
   //connect shenkong
-  config.SKAPI='http://124.161.16.235:8280/integral-web/app';
-  config.SKMSGAPI='http://124.161.16.235:8280/integral-sms/app';
-  config.shopCode='917368400090306';
-  config._host='http://123.207.124.91:3000';
-  config.bankAPI= {
-      pay: 'https://wsnx.artisangroup.cn/ps/consume/payment',
-      refund: 'https://wsnx.artisangroup.cn/ps/reject/refund',
-      search: 'https://wsnx.artisangroup.cn/ps/order/search',
-      balance: 'https://wsnx.artisangroup.cn/ps/balance/notify',
-      merchantList: 'https://wsnx.artisangroup.cn/ps/merchant/approved/list',
-      signature: 'https://wsnx.artisangroup.cn/ps/signature/unsign/body'
-  };
+  // config.SKAPI='http://124.161.16.235:8280/integral-web/app';
+  // config.SKMSGAPI='http://124.161.16.235:8280/integral-sms/app';
+  // config.shopCode='917368400090306';
+  // config._host='http://123.207.124.91:3000';
+  // config.bankAPI= {
+  //     pay: 'https://wsnx.artisangroup.cn/ps/consume/payment',
+  //     refund: 'https://wsnx.artisangroup.cn/ps/reject/refund',
+  //     search: 'https://wsnx.artisangroup.cn/ps/order/search',
+  //     balance: 'https://wsnx.artisangroup.cn/ps/balance/notify',
+  //     merchantList: 'https://wsnx.artisangroup.cn/ps/merchant/approved/list',
+  //     signature: 'https://wsnx.artisangroup.cn/ps/signature/unsign/body'
+  // };
   // sequelize
   config.sequelize = {
-    host: '',
+    host: 'cd-cdb-qlcyqafi.sql.tencentcdb.com',
     port:'63872',
-    database: '',
+    database: 'zhibo1',
     username: 'manager',
-    password: '',
+    password: 'abC12345678',
     dialect: 'mysql',
     define: {
       underscored: true,
