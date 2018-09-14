@@ -3,9 +3,9 @@
  */
 
 module.exports = {
-  name: '客户积分系统',
-  prefix: '客户积分系统',
-  footerText: '客户积分系统  © 2017 TimesCloud',
+  name: '梦思特Monstar',
+  prefix: '梦思特Monstar',
+  footerText: '梦思特Monstar  © 2018 Monstar',
   logo: '/static/img/logo.jpg',
   api: {
 

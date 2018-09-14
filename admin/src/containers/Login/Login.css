@@ -30,7 +30,7 @@
   width: 24.31rem;
   height: 4.375rem;
   background-size: 60%;
-  background-image: url(../../assets/img/biaoti.png);
+  /* background-image: url(../../assets/img/biaoti.png); */
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -138,14 +138,14 @@
   padding:1.875rem 0px 0px 3.125rem;
 
 }
-.logo_img{
+/* .logo_img{
   width: 396px;
   height: 78px;
   background-image: url(../../assets/img/logo.png);
   background-repeat: no-repeat;
   background-position: left;
   background-size: 60%;
-}
+} */
 .logo_text{
   padding-left: 0.625rem;
   flex: 1;
