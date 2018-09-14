@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Carousel } from 'antd';
 import styles from './index.css'
 class Index extends Component {
     constructor(props) {
@@ -27,8 +28,14 @@ class Index extends Component {
     render() {
       
         return (
-           <div className={styles.test}>
-            666
+           <div>
+                <Carousel autoplay>
+                    <div><h3>1</h3></div>
+                
+                </Carousel>
+                <div className='a'>
+
+                </div>
            </div>   
         )
     }

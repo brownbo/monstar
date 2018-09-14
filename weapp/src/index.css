@@ -7,3 +7,33 @@ html, body, :global(#root) {
   height: 30px;
 }
 
+.a{
+  width: 100px;
+  height: 100px;
+  background-color: aquamarine
+}
+
+@media (min-width: 600px){
+  body{font-size: 18px}
+ 
+} /*>=1024的设备*/
+@media (min-width: 1100px) {
+  body{font-size: 20px}
+  
+} /*>=1024的设备*/
+@media (min-width: 1280px) {
+  body{font-size: 22px;}
+  
+} 
+@media (min-width: 1366px) {
+  body{font-size: 24px;}
+}  
+@media (min-width: 1440px) {
+  body{font-size: 25px !important;}
+} 
+@media (min-width: 1680px) {
+  body{font-size: 28px;}
+} 
+@media (min-width: 1920px) {
+  body{font-size: 33px;}
+} 

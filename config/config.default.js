@@ -58,7 +58,7 @@ module.exports = appInfo => {
   // };
   // sequelize
   config.sequelize = {
-    host: 'cd-cdb-qlcyqafi.sql.tencentcdb.com',
+    host: '',
     port:'63872',
     database: 'zhibo1',
     username: 'manager',
