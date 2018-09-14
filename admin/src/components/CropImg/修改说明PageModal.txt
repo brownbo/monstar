@@ -1,0 +1,127 @@
+/* 增加裁剪图片需要改动程序的地方
+ * @Author: zhengyinhua 
+ * @Date: 2018-04-26 10:58:34 
+ * @Last Modified by: zhengyinhua
+ * @Last Modified time: 2018-04-26 19:49:17
+ */
+
+
+1：-------------------------models-----------------------------
+
+【import】+
+//裁剪图片
+import {uploadFile} from '../services/uploadFile'
+
+
+【state】+
+
+//裁剪图片所需参数
+cropModalVisible:false,//裁剪窗口
+editorImg:'',//裁剪图片之前的data base64
+fileName:'',//裁剪图片名称
+oldFile:''//裁剪之前原图片，如果不裁剪直接传原图片上去
+
+
+【effects】+
+
+//裁剪图片上传函数
+* uploadCropImg ({payload}, {select, call, put}) {
+    const fileName = yield select(({banner})=>banner.fileName);
+    const fileList = yield select(({banner})=>banner.fileList);
+    const oldFile = yield select(({banner})=>banner.oldFile);
+    const data = yield call(uploadFile, {data:payload?payload:oldFile,fileName})
+    const newList = fileList.map(item=>{
+        if(item.status){
+        return item
+        }else{
+        return {
+            ...item,
+            status: 'done',
+            name: fileName,
+            url: data,
+            response:{success:true,url:data}
+        }
+        }
+    })
+    yield put({
+    type: 'updateState',
+    payload: {
+        fileList:newList,
+        cropModalVisible:false,
+        editorImg:'',
+        fileName:'',
+    },
+    })
+    message.success('上传成功!');
+},
+
+
+2.-------------------------routers-----------------------------
+【index.js】+ //connect组件出增加showCropImg方法和cropImgProps参数
+//展示裁剪图片  
+showCropImg : (data, file, name) => {
+const fileList = this.props.currModel.fileList.concat([file]);
+    this.props.dispatch({
+        type: `${this.api_name}/updateState`,
+        payload: {
+        editorImg: data,
+        cropModalVisible: true,
+        fileName: name,
+        fileList,
+        oldFile:file,
+        }
+    })
+},
+//裁剪图片组件所需参数
+cropImgProps: {
+    cropSize: 1 / 1, //裁剪比列
+    editorImg: this.props.currModel.editorImg,
+    visible: this.props.currModel.cropModalVisible,
+    maskClosable: false,
+    title: "图片裁剪-比例(1:1)",
+    confirmLoading: this.props.loading.effects[`businessRecommend/uploadCropImg`], 
+    BtnOk: (data) => {
+        this.props.dispatch({ type: `${this.api_name}/uploadCropImg`, payload: data, })
+    },
+    onCancel: () => {
+        this.props.dispatch({
+        type: `${this.api_name}/updateState`,
+        payload: {
+            cropModalVisible: false, //隐藏裁剪框
+            fileList: this.props.currModel.fileList.filter(item => { return item.status }),
+        }
+        })
+    },
+}
+【PageModal.js】裁剪展示页面
+一：
+//裁剪图片
+import CropImg from '../../components/CropImg'
+import Func from "../../utils/publicFunc"
+
+二：
+handleChange：修改
+handleChange = ({ file }) => {
+    if (file.status === 'removed') {
+      const fileList = this.props.fileList.filter(item => item.status !== 'removed');
+      this.props.updateFile(fileList);
+    }
+  }
+三：
+//阻止上传展示裁剪图片modal
+  beforeUpload = (file, files) => {
+    Func.readBlobAsDataURL(file, dataurl => {
+      this.props.showCropImg(dataurl,file, file.name);
+    });
+    return false;
+  }
+四：
+render:
+const {cropImgProps}  = this.props;
+<div>
+    ...main content
+    <upload beforeUpload = {this.beforeUpload}/>
+    {cropImgProps.visible?<CropImg {...cropImgProps}/>:''} 
+</div>
+
+

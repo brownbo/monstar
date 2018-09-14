@@ -1,0 +1,119 @@
+<style lang="less" scoped>
+.sign-up-header {
+  padding: 40rpx;
+  text-align: center;
+  font-size: 60rpx;
+  font-weight: bold;
+  color: #000;
+}
+.sign-up-form {
+  padding: 15px 15px 0 15px;
+}
+.sign-up-form-item {
+  margin-top: 30rpx;
+}
+.zan-btn--primary {
+  background-color: #ff9900;
+  border-color: #ffaa00;
+}
+.placeholder {
+  color: #666;
+}
+button[disabled] {
+  border-color: #ccc;
+}
+</style>
+<template>
+  <view class="sign">
+      <view class="zan-panel">
+        <view class="zan-cell zan-field">
+          <view class="zan-cell__hd zan-field__title">手机号</view>
+          <input type="number" class="zan-cell__bd zan-field__input" placeholder="请填写银行注册时的手机号" bindinput="bindPhoneInput"/>
+        </view>
+        <view class="zan-cell zan-field">
+          <view class="zan-cell__hd zan-field__title">验证码</view>
+          <input type="number" class="zan-field__input zan-cell__bd" placeholder="请输入验证码" bindinput="bindVcodeInput"/>
+          <view class="zan-cell__ft">
+            <button class="zan-btn zan-btn--mini zan-btn--warn" @tap="sendVcode(60)" disabled="{{!showVcode}}">{{countdown >= 0 ? '重新获取(' + countdown + ')':'获取验证码'}}</button>
+          </view>
+        </view>
+      </view>
+      <view class="sign-up-form">
+        <view class="sign-up-form-item">
+          <button class="zan-btn zan-btn--primary" @tap="submit" disabled="{{!showSubmit}}">确定</button>
+        </view>
+      </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "客户身份验证"
+  };
+
+  data = {
+    countdown: -1,
+    phone: "",
+    vcode: "",
+
+    type: "" //预代理还是预兑换
+  };
+  onLoad({ type }) {
+    console.log(type);
+    this.type = type;
+  }
+  computed = {
+    showVcode() {
+      return this.countdown < 0 && /^1\d{10}$/.test(this.phone);
+    },
+    showSubmit() {
+      return /^1\d{10}$/.test(this.phone) && /^\d{6}$/.test(this.vcode);
+    }
+  };
+  watch = {};
+  methods = {
+    bindPhoneInput(e) {
+      this.phone = e.detail.value;
+    },
+    bindVcodeInput(e) {
+      this.vcode = e.detail.value;
+    },
+    sendVcode(sec) {
+      this.countdown = ~~sec - 1;
+      const timer = setInterval(() => {
+        this.countdown = this.countdown - 1;
+        this.$apply();
+        if (this.countdown < 0) clearInterval(timer);
+      }, 1000);
+      this.$root.$parent.sendSms(this.phone);
+    },
+    submit() {
+      this.confirm();
+    }
+  };
+
+  async confirm() {
+    console.log(this.phone, this.vcode);
+    try {
+      wx.showLoading({
+        title: "正在验证..."
+      });
+
+      wx.redirectTo({
+        url: `/pages/staff/userinfo-conf?type=${this.type}`
+      });
+    } catch (err) {
+      wx.showModal({
+        showCancel: false,
+        title: "提示",
+        content: err.message
+      });
+    } finally {
+      wx.hideLoading();
+    }
+  }
+}
+</script>

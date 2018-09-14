@@ -1,0 +1,226 @@
+<style>
+.qrcode {
+  margin: 40px auto;
+  width: 500rpx;
+  height: 500rpx;
+  background: #fff;
+  overflow: hidden;
+}
+
+.m-r-2 {
+  margin-right: 10rpx;
+}
+
+.zan-btn--primary {
+  background-color: #ff9900;
+  border-color: #ffaa00;
+}
+.zan-ellipsis--l2 {
+  height: 40px;
+}
+</style>
+<template>
+  <view @tap="viewGoods" class="zan-panel">
+    <view class="zan-card">
+      <view class="zan-card__thumb">
+        <image class="zan-card__img" mode="aspectFit" src="{{goodsPreview}}"/>
+      </view>
+      <view class="zan-card__detail">
+        <view class="zan-card__detail-row">{{goodsName}}</view>
+        <view class="zan-card__detail-row zan-c-gray-darker zan-ellipsis--l2">{{goodsDesc}}</view>
+        <view class="zan-card__detail-row zan-c-red">
+          <text wx:if="{{payType !== 0}}">¥{{amount}}</text>
+          <text wx:if="{{payType === 2}}"> + </text>
+          <text wx:if="{{payType !== 1}}">{{exchPoints}}积分</text>
+        </view>
+      </view>
+    </view>
+  </view>  
+  <canvas wx:if="{{status === 2}}" class="qrcode" canvas-id="qrcode">
+  </canvas>
+  <view class="zan-panel-title">商户信息</view>
+  <view class="zan-panel">
+    <view class="zan-cell">
+      <view class="zan-cell__bd">{{type === 'gift' ? '网点' : '商户'}}</view>
+      <view class="zan-cell__ft">{{shopName}}</view>
+    </view>
+    <view class="zan-cell">
+      <view class="zan-cell__bd">电话</view>
+      <view @tap="makecall" class="zan-cell__ft">
+        <text class="zan-icon zan-icon-phone m-r-2"></text>
+        <text>{{shopPhone}}</text>
+      </view>
+    </view>
+    <view class="zan-cell">
+      <view class="zan-cell__bd">地址</view>
+      <view @tap="viewAddr" class="zan-cell__ft">
+        <text class="zan-icon zan-icon-location m-r-2"></text>
+        <text>{{shopAddr}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="zan-btns" style="padding: 30px 0;">
+    <button wx:if="{{status === 0}}" class="zan-btn zan-btn--danger" @tap="goPay">立即支付 ¥{{amount}}</button>
+    <button wx:if="{{status === 2}}" class="zan-btn zan-btn--danger" @tap="goRefund">申请退款</button>
+    <button wx:if="{{canEval}}" class="zan-btn zan-btn--warn" @tap="goEval">去评价</button>
+  </view> 
+  <view></view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import wxbarcode from "wxbarcode";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "订单详情"
+  };
+
+  data = {
+    id: "",
+    type: "gift",
+    goodsId: "",
+    goodsPreview: "",
+    goodsName: "",
+    goodsDesc: "",
+    amount: 0,
+    exchPoints: 0,
+    payType: 0,
+    orderNo: "",
+    status: 0,
+    shopId: "",
+    shopName: "",
+    shopAddr: "",
+    shopPhone: "",
+    shopLong: "",
+    shopLat: "",
+    canEval: false
+  };
+
+  order = null;
+
+  methods = {
+    viewAddr() {
+      wx.openLocation({
+        longitude: this.shopLong,
+        latitude: this.shopLat,
+        name: this.shopName,
+        address: this.shopAddr
+      });
+    },
+    makecall() {
+      wx.makePhoneCall({
+        phoneNumber: this.shopPhone
+      });
+    },
+    viewGoods() {
+      if (this.type === "voucher") {
+        this.$navigate("/pages/customer/voucher?id=" + this.goodsId);
+      } else {
+        this.$navigate(
+          "/pages/customer/gift-goods?id=" + this.goodsId + "&type=" + this.type
+        );
+      }
+    },
+    goPay() {
+      this.$root.$navigate(
+        `/pages/customer/payment?orderId=${
+          this.id
+        }&frontUrl=${encodeURIComponent(
+          api.payfront + "?type=navigateBack"
+        )}&endUrl=${encodeURIComponent(api.payback)}`
+      );
+    },
+    goEval() {
+      this.$root.$navigate(
+        "/pages/customer/publishEval?type=" + this.type + "&id=" + this.id
+      );
+    },
+    goRefund() {
+      this.$root.$navigate("/pages/customer/refund?id=" + this.id);
+    }
+  };
+
+  onLoad({ id }) {
+    this.id = id;
+  }
+
+  onShow() {
+    this.fetchOrder();
+  }
+
+  async fetchOrder() {
+    const order = await request(api.order.replace(":id", this.id), {
+      data: {
+        include: true
+      }
+    });
+
+    this.order = order;
+
+    // 礼品
+    if (order.type === 0) {
+      this.type = "gift";
+      this.order.goods = order.gift;
+      this.order.shop = order.netspot;
+
+      this.goodsPreview = root + order.gift.imgs.split(",", 1)[0];
+      this.goodsName = order.gift.name;
+      this.goodsDesc = order.gift.desc;
+      this.goodsId = order.gift.id;
+
+      this.shopId = order.netspot_id;
+      this.shopName = order.netspot.name;
+      this.shopAddr = order.netspot.address;
+      this.shopPhone = order.netspot.phone;
+      this.shopLong = order.netspot.long;
+      this.shopLat = order.netspot.lat;
+    } else if (order.type === 1) {
+      // 代金券
+      this.type = "voucher";
+      this.order.goods = order.voucher;
+      this.order.shop = order.shop;
+
+      this.goodsPreview = root + order.voucher.img.split(",", 1)[0];
+      this.goodsName = order.voucher.name;
+      this.goodsDesc = order.voucher.desc;
+      this.goodsId = order.voucher.id;
+
+      this.shopId = order.shop_id;
+      this.shopName = order.shop.name;
+      this.shopAddr = order.shop.address;
+      this.shopPhone = order.shop.connect_phone;
+      this.shopLong = order.shop.long;
+      this.shopLat = order.shop.lat;
+    } else if (order.type === 2) {
+      // 商品
+      this.type = "goods";
+      this.order.goods = order.goods;
+      this.order.shop = order.shop;
+
+      this.goodsPreview = root + order.goods.previews.split(",", 1)[0];
+      this.goodsName = order.goods.name;
+      this.goodsDesc = order.goods.desc;
+      this.goodsId = order.goods.id;
+
+      this.shopId = order.shop_id;
+      this.shopName = order.shop.name;
+      this.shopAddr = order.shop.address;
+      this.shopPhone = order.shop.connect_phone;
+      this.shopLong = order.shop.long;
+      this.shopLat = order.shop.lat;
+    }
+    this.amount = (order.amount / 100).toFixed(2);
+    this.exchPoints = order.exch_points;
+    this.payType = order.pay_type;
+    this.orderNo = order.order_no;
+    this.status = order.status;
+    this.canEval = this.status === 3 && !order.eval_id;
+    this.$apply();
+
+    if (order.status === 2) {
+      wxbarcode.qrcode("qrcode", this.orderNo, 500, 500);
+    }
+  }
+}
+</script>

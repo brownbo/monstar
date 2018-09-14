@@ -1,0 +1,27 @@
+<style>
+page {
+  height: 100%;
+}
+</style>
+<template>
+  <web-view src="{{url}}"></web-view>
+</template>
+<script>
+import wepy from "wepy";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "跳转中..."
+  };
+
+  data = {
+    url: "https://mp.weixin.qq.com/"
+  };
+
+  onLoad({ url, title }) {
+    this.url = url || this.url;
+    if (!!title) {
+      wx.setNavigationBarTitle({ title });
+    }
+  }
+}
+</script>

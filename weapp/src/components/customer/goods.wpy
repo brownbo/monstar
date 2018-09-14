@@ -1,0 +1,113 @@
+<style lang="less" scoped>
+.goods {
+  display: flex;
+  .preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    font-size: 0;
+    image {
+      width: 100%;
+      height: auto;
+      // max-height: 100px;
+    }
+  }
+  .desc {
+    font-size: 28rpx;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    flex: 1;
+    padding-left: 40rpx;
+    .desc-text:not(:last-child) {
+      margin-bottom: 10rpx;
+    }
+    .title {
+      font-weight: 600;
+      color: #000;
+    }
+    .seperator {
+      margin: 0 3px;
+    }
+    .points {
+      color: #f8a312;
+      font-size: 32rpx;
+    }
+    .points:after {
+      content: "积分";
+      margin-left: 3px;
+      font-size: 28rpx;
+    }
+    .price {
+      color: #f44;
+      font-size: 32rpx;
+    }
+    .price:before {
+      content: "¥";
+      margin-right: 2px;
+      font-size: 28rpx;
+    }
+    .price + .points:before {
+      color: #555;
+      content: "+";
+      margin: 0 4px;
+    }
+  }
+  &.vertical {
+    flex-direction: column;
+    .preview {
+      flex: none;
+      width: 100%;
+    }
+    .desc {
+      flex: none;
+      width: 100%;
+      padding-left: 0;
+      text-align: center;
+      .desc-text {
+        margin-bottom: 0;
+      }
+      .desc-text:first-child {
+        width: 100%;
+        margin-top: 10rpx;
+      }
+    }
+  }
+}
+</style>
+
+<template>
+  <view class="goods">
+    <view class="preview">
+      <image :class="{'theme-image-placeholder': !item || !item.preview}" src="{{item.preview}}" mode="widthFix"/>
+    </view>
+    <view class="desc">
+      <view class="zan-ellipsis desc-text title {{textPlaceholder}}">{{item.name}}</view>
+      <view class="desc-text {{textPlaceholder}} theme-placeholder-hide">
+        <text wx:if="{{item.pay_type !== 0}}" class="price">{{item.price || 0.00}}</text>
+        <text wx:if="{{item.pay_type !== 1}}" class="points">{{item.points || 0}}</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class extends wepy.component {
+  props = {
+    item: Object,
+    vertical: {
+      type: String,
+      default: "false"
+    }
+  };
+
+  computed = {
+    textPlaceholder() {
+      return typeof this.item !== "object" ? "theme-text-placeholder" : "";
+    }
+  };
+}
+</script>

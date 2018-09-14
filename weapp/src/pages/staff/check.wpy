@@ -1,0 +1,269 @@
+<style>
+.icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.check-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-bottom: 0.5px solid #dedede;
+  padding: 10px 20px;
+  background: #fff;
+  z-index: 1;
+}
+
+.check-list {
+  margin-top: 50px;
+}
+
+.zan-panel-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.m-r-3 {
+  margin-right: 30rpx;
+}
+
+.searchbar {
+  flex: 1;
+  padding: 0 15px;
+  border: 0.5px solid #bbb;
+  border-radius: 40rpx;
+  font-size: 13px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  height: 30px;
+}
+.search-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+.search-input {
+  flex: 1;
+  margin: 0 5px;
+}
+.search-input-value {
+  color: #222;
+  font-size: 14px;
+}
+.search-clear {
+  font-size: 18px;
+  color: #bbb;
+}
+</style>
+
+<template>
+  <view class="check">
+    <view class="check-header">
+      <view class="searchbar">
+        <image class="search-icon" src="/images/search.png"/>
+        <view @tap="pick" class="search-input {{!!keywords ? 'search-input-value' : ''}}">{{keywords || "开始时间 - 结束时间"}}</view>
+        <view hidden="{{!keywords}}" class="search-clear zan-icon zan-icon-clear" @tap="clearSearch"></view>
+      </view>
+    </view>
+    <view class="check-list">
+      <repeat for="{{checkList}}" index="index1" item="item1">
+        <view class="check-detail">
+          <view class="zan-panel-title">
+            <text>{{item1.title}}</text>
+            <!-- <image src="/images/home.png" class="icon" @tap="pick"/> -->
+          </view>
+          <view class="zan-panel">
+            <repeat for="{{item1.items}}" index="index2" item="item2">
+              <view class="zan-cell">
+                <view class="zan-cell__bd">
+                  <view class="zan-cell__text">
+                    <text class="m-r-3">{{item2.gift}}</text>
+                    <text>{{item2.customer}}</text>
+                  </view>
+                  <view class="zan-cell__desc">
+                    <text class="m-r-3">{{item2.verify_time}}</text>
+                    <text>核销人：{{item2.staff}}</text>
+                  </view>
+                </view>
+                <view class="zan-cell__ft">{{item2.points}}积分</view>
+              </view>
+            </repeat>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+      <view class="zan-loadmore__tips">暂无数据</view>
+    </view>
+    <view hidden="{{loadCount <= 1 || !noMore}}" class="zan-loadmore zan-loadmore--nomore">
+      <view class="zan-loadmore__tips">没有更多了</view>
+    </view>
+    <datepicker :show.sync="showPicker"/>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import DatePicker from "@/components/common/datepicker";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import { getLocaleFullDateString, getLocaleDateString } from "@/utils/format";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "核销明细",
+    enablePullDownRefresh: true
+  };
+
+  data = {
+    checkList: [],
+    noData: false,
+    noMore: false,
+    loadCount: 0,
+    page: 1,
+    showPicker: false,
+    start: "",
+    end: "",
+    keywords: ""
+  };
+
+  components = {
+    datepicker: DatePicker
+  };
+
+  limit = 10;
+
+  onLoad() {
+    setTimeout(() => {
+      this.fetchCheckList();
+    }, 0);
+  }
+
+  onPullDownRefresh() {
+    setTimeout(() => {
+      this.reset();
+      this.fetchCheckList(true);
+    }, 0);
+  }
+
+  onReachBottom() {
+    if (this.loadCount > 0 && !this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchCheckList();
+      }, 0);
+    }
+  }
+
+  methods = {
+    pick() {
+      this.showPicker = true;
+    },
+    clearSearch() {
+      this.keywords = "";
+      setTimeout(() => {
+        this.reset();
+        this.fetchCheckList();
+      }, 0);
+    }
+  };
+
+  events = {
+    onDateConfirm(start, end, mode) {
+      console.log(start, end, mode);
+      if (mode === "month") {
+        this.keywords = getLocaleDateString(start).slice(0, 7);
+      } else {
+        this.keywords =
+          ((start && getLocaleDateString(start)) || "----") +
+          " ~ " +
+          ((end && getLocaleDateString(end)) || "----");
+      }
+
+      if (!!start) {
+        let [y, m, d] = start.split("-");
+        if (!d) d = 1;
+        start = +new Date(~~y, ~~m - 1, ~~d, 0, 0, 0);
+      }
+      if (!!end) {
+        let [y, m, d] = end.split("-");
+        if (!d) m = ~~m + 1;
+        end = +new Date(~~y, ~~m - 1, ~~d + 1, 0, 0, 0);
+      }
+
+      setTimeout(() => {
+        this.reset();
+        this.start = start;
+        this.end = end;
+        this.fetchCheckList();
+      }, 0);
+    }
+  };
+
+  reset() {
+    this.checkList = [];
+    this.noData = false;
+    this.noMore = false;
+    this.page = 1;
+    this.loadCount = 0;
+    this.start = this.end = "";
+  }
+
+  async fetchCheckList(pulldown = false) {
+    this.loadCount++;
+    const data = await request(api.orders, {
+      data: {
+        type: 0,
+        status: 3,
+        page: this.page,
+        limit: this.limit,
+        verify_staff_id: this.$root.$parent.globalData.staffId,
+        order: "verify_time DESC",
+        include: "verify_staff,gift,customer",
+        verify_time: this.start + "," + this.end
+      }
+    });
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.merge(data);
+      this.noMore = true;
+    } else {
+      this.merge(data);
+    }
+    this.$apply();
+    if (pulldown) {
+      wx.stopPullDownRefresh();
+    }
+  }
+
+  merge(data) {
+    const obj = data.reduce((p, c) => {
+      const dateString = getLocaleFullDateString(c.verify_time);
+      const [title, time] = dateString.split(" ");
+      if (!p[title]) p[title] = [];
+      p[title].push({
+        gift: c.gift.name,
+        customer: c.customer.name,
+        staff: c.verify_staff.name,
+        points: c.exch_points,
+        verify_time: time
+      });
+      return p;
+    }, {});
+
+    const lastCheckItem = this.checkList[this.checkList.length - 1];
+    for (let title in obj) {
+      if (lastCheckItem && lastCheckItem.title === title) {
+        lastCheckItem.items = lastCheckItem.items.concat(obj[title]);
+      } else {
+        this.checkList.push({
+          title,
+          items: obj[title]
+        });
+      }
+    }
+  }
+}
+</script>

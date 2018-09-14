@@ -1,0 +1,31 @@
+<style>
+.auth {
+  position: fixed;
+  bottom: 50%;
+  left: 0;
+  right: 0;
+}
+</style>
+<template>
+  <view class="auth">
+    <view class="zan-loadmore">
+      <view class="zan-loading"></view>
+      <view class="zan-loadmore__tips">正在加载...</view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "积分商城"
+  };
+
+  onLoad() {
+    const { globalData: { role }, rolePages } = this.$parent;
+    this.$redirect(rolePages[role]);
+  }
+}
+</script>

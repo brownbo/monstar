@@ -1,0 +1,407 @@
+<style scoped>
+.harf-container {
+  background: #fff;
+  height: 65px;
+  display: flex;
+  align-items: center;
+}
+.half {
+  flex: 1;
+  text-align: center;
+}
+.half .half-title {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 5px;
+}
+.half .half-bottom {
+  font-size: 17px;
+  color: #333;
+}
+.primary-color {
+  color: #f90 !important;
+}
+
+.panel-padding {
+  padding: 40rpx 30rpx;
+}
+.zan-tab__item--selected .zan-tab__title {
+  color: #f60;
+  border-color: #f60;
+}
+.zan-col {
+  text-align: center;
+}
+.col-h {
+  color: #000;
+  font-size: 32rpx;
+}
+.col-f {
+  font-size: 26rpx;
+}
+.menu-view {
+  display: flex;
+  font-size: 30rpx;
+  position: relative;
+}
+.menu-item {
+  display: flex;
+}
+.menu-item-end {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+.search-btn {
+  position: relative;
+  padding: 0rpx 20rpx 0rpx 20rpx;
+  line-height: 44px;
+}
+.search-btn:after {
+  position: absolute;
+  content: "";
+  display: block;
+  width: 0;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  border-left: 0.5px solid #e5e5e5;
+}
+.list-day-text {
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+.search-time-text {
+  padding: 16rpx 20rpx;
+}
+
+.col-btn {
+  line-height: 74rpx;
+  color: #fecc2f;
+  border-radius: 38rpx;
+  border: 1px #fecc2f solid;
+}
+.auto-width {
+  width: auto;
+}
+.nopadding {
+  margin-top: 0;
+}
+.p-cell {
+  justify-content: space-between;
+}
+.p-cell-way {
+  text-align: center;
+}
+.p-cell-score {
+  text-align: right;
+}
+.cell-right {
+  width: 40vw;
+  display: flex;
+  justify-content: space-between;
+}
+.zan-tab__bd {
+  border-bottom: 0 !important;
+}
+.canvas {
+  width: 100vw;
+  height: 300px;
+}
+.nomarginbordertop {
+  margin-top: 0;
+  border-top: 0;
+}
+.marginb10 {
+  margin-bottom: 10px;
+}
+.canvas-view {
+  overflow-x: hidden;
+  padding: 12px 15px;
+  border-bottom: 0.5px solid #e5e5e5;
+}
+</style>
+<template>
+  <view>
+    <view class="harf-container">
+      <view class="half">
+        <view class="half-title">总积分</view>
+        <view class="half-bottom">{{result.total_points}}</view>
+      </view>
+      <view class="half">
+        <view class="half-title">可兑换积分</view>
+        <view class="half-bottom primary-color">{{result.exch_points}}</view>
+      </view>
+    </view>
+    <view class="zan-panel menu-view">
+      <view class="zan-tab__bd auto-width">
+        <view @tap="changeTab('curr')" class="zan-tab__item {{s_type==='curr'?'zan-tab__item--selected':''}}">
+          <view class="zan-tab__title">当月积分明细</view>
+        </view>
+        <view @tap="changeTab('prev')" class="zan-tab__item {{s_type==='prev'?'zan-tab__item--selected':''}}">
+          <view class="zan-tab__title">上月积分明细</view>
+        </view>
+      </view>
+      <view class="menu-item menu-item-end zan-c-gray-dark" @tap="pick">
+        <view class="search-btn">搜索</view>
+      </view>
+    </view>
+    <view hidden="{{s_type!=='other'}}"  class="search-time-text">
+      {{time_start}} 至 {{time_end}}
+    </view>
+    <view class="theme-bg-white {{noData?'':'marginb10'}}">
+      <view hidden="{{showPicker||noData}}" class="canvas-view">
+        <canvas canvas-id="ringCanvas" class="canvas"></canvas>
+      </view>
+      <view hidden="{{noData}}" class="zan-cell">
+        <view class="list-day-text">
+          {{sumCount}}笔  积分:{{sumPoints}}
+        </view>
+      </view>
+      <view wx:for="{{list}}" wx:key class="zan-cell p-cell zan-c-gray-dark">
+        <view class="p-cell-time">{{item.createTime}}</view>
+        <view class="cell-right">
+          <view class="p-cell-way">{{item.integralTypeName}}</view>
+          <view class="p-cell-score">{{item.score}}积分</view>
+        </view>
+      </view>
+    </view>
+    <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+      <view class="zan-loadmore__tips">暂无数据</view>
+    </view>
+    <datepicker :show.sync="showPicker"/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import wxCharts from "@/utils/wxcharts-min.js";
+import datepicker from "@/components/common/datepicker";
+import {
+  getLocaleFullDateString,
+  getLocaleTimeString,
+  getLocaleDateString
+} from "@/utils/format";
+export default class extends wepy.component {
+  config = {
+    navigationBarTitleText: "我的积分"
+  };
+  components = {
+    datepicker
+  };
+  data = {
+    list: [],
+    sumCount: 0,
+    sumPoints: 0,
+    noData: true,
+    noMore: false,
+    page: 1,
+    s_type: "curr",
+    result: {
+      total_points: 0,
+      exch_points: 0
+    },
+    showPicker: false,
+    start: null,
+    end: null,
+    hasShown: false
+  };
+  limit = 10;
+
+  onShow() {
+    const { customer } = this.$root.$parent.globalData;
+    this.result.total_points = customer.total_points;
+    this.result.exch_points = customer.exch_points;
+    if (!!customer && !this.hasShown) {
+      this.hasShown = true;
+      setTimeout(() => {
+        this.fetchData();
+      }, 0);
+    }
+  }
+  showCart(dataArr) {
+    var windowWidth = 350;
+    try {
+      var res = wx.getSystemInfoSync();
+      windowWidth = res.windowWidth;
+    } catch (e) {
+      console.error("getSystemInfoSync failed!");
+    }
+    const series = dataArr.map(item => {
+      return {
+        name: item.integralTypeName,
+        data: item.totalScore,
+        stroke: false
+      };
+    });
+    const ringChart = new wxCharts({
+      animation: true,
+      canvasId: "ringCanvas",
+      type: "ring",
+      extra: {
+        ringWidth: 25,
+        pie: {
+          offsetAngle: -45
+        }
+      },
+      series: series,
+      disablePieStroke: true,
+      width: windowWidth - 15,
+      height: 300,
+      dataLabel: true,
+      legend: true,
+      background: "#f5f5f5",
+      padding: 0
+    });
+    setTimeout(() => {
+      ringChart.stopAnimation();
+    }, 500);
+  }
+  onReachBottom() {
+    //上拉加载
+    if (!this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchData();
+      }, 0);
+    }
+  }
+  computed = {
+    time_start() {
+      return getLocaleDateString(this.start);
+    },
+    time_end() {
+      return getLocaleDateString(this.end);
+    }
+  };
+  onReachBottom() {
+    //上拉加载
+    if (!this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchData();
+      }, 0);
+    }
+  }
+  events = {
+    onDateConfirm(start, end) {
+      if (!!start) {
+        let [y, m, d] = start.split("-");
+        if (!d) d = 1;
+        start = +new Date(~~y, ~~m - 1, ~~d, 0, 0, 0);
+      }
+      if (!!end) {
+        let [y, m, d] = end.split("-");
+        if (!d) m = ~~m + 1;
+        end = +new Date(~~y, ~~m - 1, ~~d + 1, 0, 0, 0);
+      }
+      const date = new Date(end);
+      date.setSeconds(date.getSeconds() - 1);
+      setTimeout(() => {
+        this.start = start;
+        this.end = date.getTime();
+        this.s_type = "other";
+        this.resetData();
+        this.fetchData();
+      }, 0);
+    }
+  };
+  resetData() {
+    this.list = [];
+    this.noData = false;
+    this.noMore = false;
+    this.page = 1;
+  }
+  methods = {
+    changeTab(type) {
+      if (this.s_type !== type) {
+        this.s_type = type;
+      }
+    },
+    pick() {
+      this.showPicker = true;
+    },
+    goToShop() {
+      const { merchant } = this.$root.$parent.globalData;
+      wx.setStorageSync("role", "customer");
+      wx.setStorageSync("customerId", merchant.id);
+      wx.navigateTo({ url: "/pages/customer/index" });
+    }
+  };
+  watch = {
+    s_type() {
+      setTimeout(() => {
+        this.resetData();
+        this.fetchData();
+      }, 0);
+    }
+  };
+  async fetchData() {
+    const { customer } = this.$root.$parent.globalData;
+    const now = new Date();
+    const nY = now.getFullYear();
+    const nM = now.getMonth();
+    const nD = now.getDate();
+    const opts = {
+      customer_code: customer.customer_code
+    };
+    if (this.s_type === "curr") {
+      //当月核销明细
+      const s = new Date(nY, nM, 1);
+      const e = new Date(nY, nM + 1, 1);
+      e.setSeconds(e.getSeconds() - 1);
+      opts.beginDate = s.getTime().toString();
+      opts.endDate = e.getTime().toString();
+    } else if (this.s_type === "prev") {
+      //上月核销明细
+      const s = new Date(nY, nM - 1, 1);
+      const e = new Date(nY, nM, 1);
+      e.setSeconds(e.getSeconds() - 1);
+      opts.beginDate = s.getTime().toString();
+      opts.endDate = e.getTime().toString();
+    } else {
+      //时间段查询
+      opts.beginDate = this.start.toString();
+      opts.endDate = this.end.toString();
+    }
+    let data;
+    try {
+      data = await request(`${api.customerDetailList}`, {
+        data: opts
+      });
+    } catch (e) {}
+    if (!data || data.currentData.result.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.currentData.result.length < this.limit) {
+      this.noMore = true;
+    }
+    if (!data) {
+      this.list = [];
+      this.sumCount = 0;
+      this.sumPoints = 0;
+      this.$apply();
+      return;
+    }
+    this.showCart(data.stat);
+    const list = data.currentData.result.map(obj => {
+      const createTime = new Date(obj.createTime);
+      const now = new Date();
+      if (
+        now.getFullYear() === createTime.getFullYear() &&
+        now.getMonth() === createTime.getMonth() &&
+        now.getDate() === createTime.getDate()
+      ) {
+        obj.createTime = "今天 " + getLocaleTimeString(obj.createTime);
+      } else {
+        obj.createTime = getLocaleFullDateString(obj.createTime);
+      }
+      return obj;
+    });
+    this.list = list;
+    this.sumCount = data.currentData.totalCount;
+    this.sumPoints = data.totalScore;
+    this.$apply();
+  }
+}
+</script>

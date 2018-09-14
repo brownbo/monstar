@@ -1,0 +1,188 @@
+<style>
+.my-header {
+  padding: 20rpx;
+  color: #ff9900;
+  font-size: 40rpx;
+}
+.zan-panel {
+  margin-top: 0;
+}
+.zan-btn--primary {
+  background-color: #ff9900;
+  border-color: #ffaa00;
+}
+</style>
+
+<template>
+  <view class="my">
+    <view class="my-header">{{title}}</view>
+    <view class="zan-panel" wx:if="{{action === 'info'}}">
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">姓名</view>
+        <input id="name" bindinput="bindinput" focus class="zan-cell__bd zan-field__placeholder" placeholder="请输入姓名" value="{{name}}"/>
+      </view>
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">电话</view>
+        <input id="phone" bindinput="bindinput" class="zan-cell__bd zan-field__placeholder" type="number" placeholder="请输入电话" value="{{phone}}"/>
+      </view>
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">所属网点</view>
+        <input id="netspot" bindinput="bindinput" class="zan-cell__bd zan-field__placeholder" placeholder="请输入网点名称" value="{{netspot}}"/>
+      </view>
+    </view>
+    <view class="zan-panel" wx:if="{{action === 'pwd'}}">
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">原密码</view>
+        <input id="oldPwd" bindinput="bindinput" focus class="zan-cell__bd zan-field__placeholder" password placeholder="请输入原密码"/>
+      </view>
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">新密码</view>
+        <input id="newPwd" bindinput="bindinput" class="zan-cell__bd zan-field__placeholder" password placeholder="请输入新密码"/>
+      </view>
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">重复新密码</view>
+        <input id="rePwd" bindinput="bindinput" class="zan-cell__bd zan-field__placeholder" password placeholder="请再次输入新密码"/>
+      </view>
+    </view>
+    <view class="zan-btns">
+      <button class="zan-btn zan-btn--primary" @tap="confirm" disabled="{{!showConfirm}}">确认修改</button>
+    </view>
+    <toptips />
+    <toast />
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import toptips from "@/components/common/toptips";
+import toast from "@/components/common/toast";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "修改个人信息"
+  };
+
+  data = {
+    action: "info",
+    title: "修改个人信息",
+    name: "",
+    phone: "",
+    netspot: "",
+    oldPwd: "",
+    newPwd: "",
+    rePwd: ""
+  };
+
+  computed = {
+    showConfirm() {
+      if (this.action === "info")
+        return !!this.name && /^1\d{10}$/.test(this.phone) && !!this.netspot;
+      if (this.action === "pwd")
+        return !!this.oldPwd && !!this.newPwd && !!this.rePwd;
+      return false;
+    }
+  };
+
+  watch = {
+    title(newTitle) {
+      wx.setNavigationBarTitle({
+        title: newTitle
+      });
+    }
+  };
+
+  components = {
+    toptips,
+    toast
+  };
+
+  methods = {
+    bindinput(e) {
+      this[e.target.id] = e.detail.value;
+    },
+    confirm() {
+      if (this.action === "pwd") {
+        this.confirmPwd();
+      } else if (this.action === "info") {
+        this.confirmInfo();
+      }
+    }
+  };
+
+  async confirmPwd() {
+    if (this.newPwd !== this.rePwd) {
+      return this.showTopTips("两次输入密码不一致");
+    }
+
+    try {
+      const data = await request(
+        api.staff.replace("{{id}}", this.$root.$parent.globalData.staffId),
+        {
+          method: "PUT",
+          data: {
+            password: this.newPwd,
+            oldPassword: this.oldPwd
+          }
+        }
+      );
+      this.updateSuccess(data);
+    } catch (err) {
+      this.updateFail(err);
+    }
+  }
+
+  async confirmInfo() {
+    try {
+      const data = await request(
+        api.staff.replace("{{id}}", this.$root.$parent.globalData.staffId),
+        {
+          method: "PUT",
+          data: {
+            name: this.name,
+            phone: this.phone
+          }
+        }
+      );
+      this.updateSuccess(data);
+    } catch (err) {
+      this.updateFail(err);
+    }
+  }
+
+  updateSuccess(data) {
+    this.$root.$parent.globalData.staff = Object.assign(
+      this.$root.$parent.globalData.staff,
+      data
+    );
+    wx.showToast({
+      title: "修改成功",
+      icon: "success",
+      duration: 1000
+    });
+    setTimeout(() => {
+      wx.navigateBack();
+    }, 1000);
+  }
+
+  updateFail(err) {
+    this.$invoke("toast", "showToast", err.message, 1200);
+  }
+
+  showTopTips(content, duration) {
+    this.$invoke("toptips", "showTopTips", content, duration);
+  }
+
+  onLoad({ action }) {
+    if (action === "pwd") {
+      this.action = action;
+      this.title = "修改密码";
+    } else {
+      const staff = this.$root.$parent.globalData.staff;
+      this.name = staff.name;
+      this.phone = staff.phone;
+      this.netspot = staff.netspot && staff.netspot.name;
+    }
+  }
+}
+</script>

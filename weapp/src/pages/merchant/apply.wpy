@@ -1,0 +1,474 @@
+<style>
+  .my-header {
+    padding: 20 rpx;
+    color: #ff9900;
+    font-size: 40 rpx;
+  }
+
+  .zan-panel {
+    margin-top: 0;
+  }
+
+  .zan-cell__ft {
+    flex: 2;
+    text-align: left;
+  }
+
+  .zan-cell__ft2 {
+    width: 80px;
+    text-align: left;
+  }
+
+  .zan-btn--primary {
+    background-color: #ff9900;
+    border-color: #ffaa00;
+  }
+
+  .zan-cell__img {
+    width: 33.3333%;
+    padding: 3px 5px;
+  }
+
+  .zan-cell__theme {
+    width: 98%;
+  }
+
+  .shop-img {
+    width: 100%;
+    height: 90px;
+  }
+
+  .desc__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .zan-text {
+    text-align: center;
+    border: 1px dashed #d9d9d9;
+    background-color: #fafafa;
+    line-height: 45px;
+  }
+
+  .zan-row {
+    width: 100%;
+  }
+
+  .imgpadd {
+    padding: 5px;
+    position: relative;
+  }
+
+  .btn-margin-right {
+    margin-right: 10px;
+  }
+
+  .btn-margin-left {
+    margin-left: 10px;
+  }
+
+  .clear {
+    position: absolute;
+    top: 0px;
+    right: 2px;
+  }
+
+  .menu-item {
+    display: flex;
+  }
+
+  .my-icon-down {
+    font-size: 20 rpx;
+    transform: rotate(90deg);
+  }
+
+  .img-text {
+    font-size: 12px;
+  }
+</style>
+
+<template>
+  <view class="my">
+    <view wx:if="{{goodsId}}">
+      <loading hidden="{{hidden}}">
+        加载中...
+      </loading>
+    </view>
+    <view class="zan-panel">
+      <view class="zan-cell">
+        <view class="zan-cell__bd">选择类型</view>
+        <view class="zan-cell__ft">
+          <picker bindchange="bindPickerChange"  range="{{shopType}}" range-key="name">
+            <view class="menu-item marginleft zan-c-gray-dark">
+              <view>{{selectedType.name}}</view>
+              <view class="zan-icon zan-icon-arrow my-icon-down"></view>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">商户名称</view>
+        <input id="shopName" bindinput="bindinput" class="zan-cell__ft zan-field__placeholder" placeholder="请填写商户名称"
+               value="{{shopName}}"/>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">经营人</view>
+        <input id="people" bindinput="bindinput" class="zan-cell__ft zan-field__placeholder" placeholder="请填写商户经营人"
+               value="{{people}}"/>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">经营内容</view>
+        <input id="shop_desc" bindinput="bindinput" type="text" class="zan-cell__ft zan-field__placeholder"
+               placeholder="请填写您的经营内容"
+               value="{{shop_desc}}"/>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">联系电话</view>
+        <input id="phone" bindinput="bindinput" type="number" class="zan-cell__ft zan-field__placeholder"
+               placeholder="请填写您的联系电话"
+               value="{{phone}}"/>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">地址</view>
+        <input id="address" bindinput="bindinput" class="zan-cell__ft zan-field__placeholder" placeholder="请填写您的商户地址"
+               value="{{address}}"/>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-row">
+          <view wx:if="{{preview}}" class="zan-col zan-col-24 imgpadd">
+            <image src="{{preview}}" class="shop-img"/>
+            <view @tap="deletImg" class="clear">
+              <icon type="clear" size="14"/>
+            </view>
+          </view>
+
+          <view wx:if="{{!preview}}" class="zan-col zan-col-8 imgpadd">
+            <view class="zan-icon zan-icon-add zan-text shop-img" style="color: #ff9900" @tap="addTheme">
+              <view class="img-text">营业执照照片</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-row">
+          <view wx:for="{{detailList}}" wx:key="{{key}}" class="zan-col zan-col-8 imgpadd">
+            <image src="{{item}}" class="shop-img"/>
+            <view @tap="deletShopImg({{index}})" class="clear">
+              <icon type="clear" size="14"/>
+            </view>
+          </view>
+          <view class="zan-col zan-col-8 imgpadd">
+            <view class="zan-icon zan-icon-add zan-text shop-img" style="color: #ff9900" @tap="addimg">
+              <view class="img-text">其他图片</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="zan-cell">
+      <view class="zan-cell__bd btn-margin-right">
+        <button class="zan-btn zan-btn--primary" @tap="back">取消</button>
+      </view>
+      <view class="zan-cell__bd btn-margin-left">
+        <button class="zan-btn zan-btn--primary" @tap="confirm" disabled="{{!showConfirm}}">提交申请</button>
+      </view>
+    </view>
+    <toptips/>
+    <toast/>
+  </view>
+</template>
+
+<script>
+
+  import wepy from "wepy";
+  import {api, root} from "@/config";
+  import request from "@/utils/request";
+  import toptips from "@/components/common/toptips";
+  import toast from "@/components/common/toast";
+  export default class extends wepy.page {
+    config = {
+      navigationBarTitleText: "商户申请"
+    };
+
+    data = {
+      preview: '',
+      detailList: [],
+      phone: '',
+      address: '',
+      shopName: '',
+      people: '',
+      shopType: [],
+      selectedType:null,
+      shop_desc: '',
+      indexType: '0',
+      hidden: false,
+      shop_type_id: '',
+      apply_person_id: '',
+      action: '',
+      shopId: '',
+    };
+    computed = {
+      showConfirm() {
+        return !!this.shopName && !!this.shop_desc && !!this.address && /^1\d{10}$/.test(this.phone) && !!this.people;
+      }
+    };
+
+
+    components = {
+      toptips,
+      toast
+    };
+    methods = {
+      bindinput(e) {
+        this[e.target.id] = e.detail.value;
+      },
+      confirm() {
+        if (this.action === "update") {
+          this.updateShop();
+        } else if(this.action === "add")  {
+          this.confirmAdd();
+        }
+
+      },
+      bindPickerChange(e){
+        this.selectedType = this.shopType[e.detail.value];
+
+        this.indexType = e.detail.value;
+        this.shop_type_id = this.shopType[e.detail.value].id;
+      },
+      //添加商品相关图片
+      addimg(){
+        wx.chooseImage({
+          count: 1, // 默认9
+          sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+          sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+          success: (res) => {
+            // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
+            /* this.detailList.push( res.tempFilePaths[0]);
+             this.$apply();*/
+            wx.uploadFile({
+              url: api.upload, //仅为示例，非真实的接口地址
+              filePath: res.tempFilePaths[0],
+              name: 'filename',
+              success: (res)=> {
+                var data = res.data
+                data = JSON.parse(data)
+                this.detailList.push(root + data.url);
+                this.showTopTips("图片上传成功")
+                this.$apply();
+              },
+              fail: (res)=> {
+                this.showTopTips("图片上传失败")
+              }
+            })
+
+          }
+        })
+      },
+      //添加主图片
+      addTheme(){
+
+        wx.chooseImage({
+          count: 1, // 默认9
+          sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有
+          sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有
+          success: (res) => {
+            // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片
+            /* this.preview=res.tempFilePaths[0]
+             console.log(res.tempFilePaths[0])
+             this.$apply();*/
+            wx.uploadFile({
+              url: api.upload, //仅为示例，非真实的接口地址
+              filePath: res.tempFilePaths[0],
+              name: 'filename',
+              success: (res)=> {
+                var data = res.data
+                data = JSON.parse(data)
+                this.preview = root + data.url;
+                this.$apply();
+                this.showTopTips("图片上传成功")
+
+              },
+              fail: (res)=> {
+                console.log(api.upload)
+                this.showTopTips("图片上传失败")
+              }
+            })
+          }
+        })
+      },
+      deletImg(){
+        //删除图片
+        this.preview = '';
+        this.$apply();
+      },
+      deletShopImg(index){
+        //根据坐标index移除数组中的某一项
+        this.detailList.splice(index, 1);
+        this.$apply();
+      },
+      //返回
+      back(){
+        wx.navigateBack();
+      }
+    };
+
+    updateSuccess(data) {
+      wx.showToast({
+        title: '提交成功',
+        icon: "success",
+        duration: 1000
+      });
+      setTimeout(() => {
+        wx.navigateBack();
+      }, 1000);
+    }
+
+    updateFail(err) {
+      this.$invoke("toast", "showToast", err.message, 1200);
+    }
+
+    showTopTips(content, duration) {
+      this.$invoke("toptips", "showTopTips", content, duration);
+    }
+
+    onLoad(shopId) {
+      this.getShopType();
+      if (shopId.shopid) {
+        //编辑修改，获取商铺信息进行显示
+        this.getShop(shopId.shopid);
+        this.shopId=shopId.shopid;
+        this.action = 'update';
+      } else {
+        this.action = 'add';
+        this.apply_person_id = this.$parent.globalData.customerId;
+      }
+
+    }
+
+    //获取商铺类型
+    async getShopType() {
+
+      try {
+        const shopTypes = await request(api.shopTypes);
+        this.shopType=[];
+        shopTypes.map(item=> {
+          this.shopType.push({
+            name: item.name,
+            id: item.id,
+          })
+          this.shop_type_id=this.shopType[0].id;
+          this.selectedType=this.shopType[0];
+        })
+        this.$apply();
+      } catch (err) {
+
+      }
+    }
+
+    async getShop(shop_id) {
+      try {
+        const shop = await request(api.shop.replace(":id", shop_id))
+        if (shop) {
+          this.shopName = shop.name;
+          this.address = shop.address;
+          this.phone = shop.connect_phone;
+          this.people = shop.connect_person;
+          this.shop_desc = shop.shop_desc;
+          this.shop_type_id = shop.shop_type_id;
+
+          this.preview = root + shop.business_img;
+          if (shop.shop_img) {
+            this.detailList = shop.shop_img.split(',').map(item=> root + item);
+          }
+
+          //默认选中商铺类型
+          this.shopType.forEach((item, index)=> {
+            if (item.id == this.shop_type_id) {
+             this.selectedType=item;
+            }
+          });
+
+        }
+        this.$apply();
+      } catch (err) {
+      }
+    }
+    async confirmAdd() {
+      if (!this.preview) {
+        return this.showTopTips("请上营业执照照片");
+      }
+      if (this.detailList.length==0) {
+        return this.showTopTips("请上传商户相关图片");
+      }
+      var business_img = this.preview.substr(this.preview.lastIndexOf('/', this.preview.lastIndexOf('/') - 1))
+      var shop_img = this.detailList.toString().split(',').map(item=> {
+        return item.substr(item.lastIndexOf('/', item.lastIndexOf('/') - 1));
+      })
+
+      try {
+        const data = await request(api.shops,
+          {
+            method: "POST",
+            data: {
+              connect_phone: this.phone,
+              address: this.address,
+              name: this.shopName,
+              connect_person: this.people,
+              business_img: business_img.toString(),
+              shop_img: shop_img.toString(),
+              examine_status: 0,
+              shop_desc: this.shop_desc,
+              shop_type_id: this.shop_type_id,
+            }
+          }
+        );
+        this.updateSuccess(data);
+      } catch (err) {
+        console.log(err)
+        this.updateFail(err);
+      }
+    }
+
+    async updateShop() {
+
+      if (!this.preview) {
+        return this.showTopTips("请上营业执照照片");
+      }
+      if (this.detailList.length==0) {
+        return this.showTopTips("请上传商户相关图片");
+      }
+
+      var business_img = this.preview.substr(this.preview.lastIndexOf('/', this.preview.lastIndexOf('/') - 1))
+      var shop_img = this.detailList.toString().split(',').map(item=> {
+        return item.substr(item.lastIndexOf('/', item.lastIndexOf('/') - 1));
+      })
+      try {
+        const data = await request(api.shop.replace(":id", this.shopId),
+          {
+            method: "PUT",
+            data: {
+              connect_phone: this.phone,
+              address: this.address,
+              name: this.shopName,
+              connect_person: this.people,
+              business_img: business_img.toString(),
+              shop_img: shop_img.toString(),
+              examine_status: 0,
+              shop_desc: this.shop_desc,
+              shop_type_id: this.shop_type_id,
+            }
+          }
+        );
+        this.updateSuccess(data);
+      } catch (err) {
+        console.log(err)
+        this.updateFail(err);
+      }
+
+    }
+  }
+</script>

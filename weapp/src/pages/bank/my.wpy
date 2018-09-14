@@ -1,0 +1,80 @@
+<style>
+.my-header {
+  padding: 20rpx;
+  color: #ff9900;
+  font-size: 40rpx;
+}
+.zan-panel {
+  margin-top: 0;
+}
+.zan-cell__ft {
+  flex: 2;
+  text-align: left;
+}
+.zan-btn--primary {
+  background-color: #ff9900;
+  border-color: #ffaa00;
+}
+</style>
+
+<template>
+  <view class="my">
+    <view class="my-header">
+      个人信息
+    </view>
+    <view class="zan-panel">
+      <view class="zan-cell">
+        <view class="zan-cell__bd">姓名</view>
+        <view class="zan-cell__ft">{{name}}</view>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">电话</view>
+        <view class="zan-cell__ft">{{phone}}</view>
+      </view>
+      <view class="zan-cell">
+        <view class="zan-cell__bd">网点</view>
+        <view class="zan-cell__ft">{{netspot}}</view>
+      </view>
+    </view>
+    <view class="zan-btns">
+      <navigator url="/pages/bank/update" class="zan-btn zan-btn--primary">修改信息</navigator>
+      <navigator url="/pages/bank/update?action=pwd" class="zan-btn zan-btn--warn">修改密码</navigator>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "个人信息"
+  };
+
+  data = {
+    name: "",
+    phone: "",
+    netspot: ""
+  };
+
+  onShow() {
+    this.fetchStaffInfo();
+  }
+
+  async fetchStaffInfo() {
+    let staff = this.$root.$parent.globalData.staff;
+    if (!staff) {
+      staff = await request(
+        api.staff.replace("{{id}}", this.$root.$parent.globalData.staffId),
+        { data: { include: "netspot" } }
+      );
+      this.$root.$parent.globalData.staff = staff;
+    }
+    this.name = staff.name;
+    this.phone = staff.phone;
+    this.netspot = staff.netspot && staff.netspot.name;
+    this.$apply();
+  }
+}
+</script>

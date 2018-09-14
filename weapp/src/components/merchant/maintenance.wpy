@@ -1,0 +1,462 @@
+<style>
+.zan-tab__item--selected .zan-tab__title {
+  color: #f60;
+  border-color: #f60;
+}
+.menu-view {
+  display: flex;
+  font-size: 15px;
+  position: relative;
+}
+.menu-item{
+  padding: 9px 30rpx;
+  display: flex;
+}
+.my-search-cell{
+  border-top:1rpx solid #e5e5e5;
+  border-bottom:1rpx solid #e5e5e5;
+  padding:0px 15px !important;
+  font-size:15px;
+}
+.menu-item-end{
+  flex:1;
+  display: flex;
+  justify-content: flex-end;
+}
+.search-btn{
+  padding: 0rpx 0rpx 0rpx 20rpx;
+  border-left: 1rpx #eee solid;
+}
+.marginleft{
+  margin-left: 100rpx;
+}
+.my-icon-down{
+  font-size: 20rpx;
+  transform:rotate(90deg);
+}
+.flex{
+  display: flex;
+ }
+.list-content{
+  padding: 28rpx;
+  border-bottom: 0.5px solid #e5e5e5;
+}
+.li-img{
+  width: 200rpx;
+  height: 200rpx;
+}
+.li-right{
+  display:flex;
+  flex:1;
+  padding-left:30rpx;
+  flex-direction:column;
+  justify-content:space-between;
+}
+ .name-des-view{
+   flex: 1;
+ }
+.price-count-view{
+  width: 150rpx;
+  font-size: 32rpx;
+  text-align: right;
+}
+.name{
+  font-size: 32rpx;
+}
+.des{
+  line-height: 30rpx;
+  font-size: 28rpx;
+  height: 60rpx;
+  overflow: hidden;
+}
+.count{
+  font-size: 28rpx;
+}
+.zan-tag{
+  margin-right: 20rpx;
+}
+.btn-view{
+  padding: 16rpx 20rpx;
+  display: flex;
+  justify-content: flex-end;
+}
+.list-btn{
+  padding: 0rpx 20rpx;
+  font-size: 30rpx;
+}
+.f-r{
+   float: right;
+}
+.fontsize0{
+   font-size: 0;
+}
+.zan-tag--recd{
+  background-color: #108ee9;
+  border-color: #108ee9;
+}
+.zan-tag--new{
+  background-color: #AF874D;
+  border-color: #AF874D;
+}
+.add-btn-icon{
+  font-size: 80rpx;
+  color:#fff;
+  background-color: #3283fa;
+}
+.add-btn{
+  display: flex;
+  align-items:center;
+  justify-content: center;
+}
+.add-view{
+  text-align: center;
+  position: fixed;
+  bottom: 160rpx;
+  right: 40rpx;
+  z-index: 9999;
+}
+.my-modal{
+  position: fixed;
+  top:0;
+  left:0;
+  right: 0;
+  bottom: 0;
+  background-color: #0e0e0e;
+  opacity: 0.5;
+  z-index: 9998;
+}
+.item-text{
+  flex: 1;
+  justify-content: flex-start;
+  color: #fff;
+  font-size: 28rpx;
+  margin-right: 20rpx;
+}
+.item-icon{
+  display: flex;
+  align-items:center;
+  justify-content: center;
+  padding: 30rpx;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 38rpx;
+  color:#fff;
+}
+.item-bg-g{
+  background-color: #e64340;
+}
+
+.item-bg-f{
+  background-color: #44db5e;
+}
+.add-menu-item{
+  margin-top: 30rpx;
+  display: flex;
+  align-items:center;
+}
+.search-title{
+  font-size: 15px;
+}
+.search-key{
+  padding: 0 3px;
+  color:#f8a312;
+}
+.my-cell-ft{
+  position: relative;
+  text-align: right;
+  color: #666;
+}
+.search-icon{
+  color: #44db5e;
+  padding: 0 6rpx;
+}
+.marginleft5px{
+  margin-right: 10rpx;
+}
+.noafter:after{
+  border: 0!important;
+}
+.padding10{
+  margin-top: 10px;
+}
+.nobordertop{
+  border-top:0;
+}
+.noborder{
+  border:0;
+}
+.nomarginbordertop{
+  margin-top: 0;
+  border-top: 0;
+}
+.before-height{
+  height: 40px;
+}
+.heigth40{
+  height: 40px;
+  position: relative;
+}
+.fixed-child{
+  position: fixed;
+  z-index: 999;
+  top: 0;
+  left: 0;
+  right:0;
+}
+.price-view{
+  font-size: 14px;
+  text-align: right;
+}
+</style>
+
+<template>
+  <view class="">
+    <view @tap="hidenMenu" class="{{show_menu?'my-modal':''}}"></view>
+    <view class="before-height">
+      <view class="fixed-child">
+        <view wx:if="{{_isSearch}}" class="zan-cell nomarginbordertop noafter theme-bg-white my-search-cell heigth40">
+          <view class="search-icon zan-icon zan-icon-search"></view>
+          <view class="zan-cell__bd search-title zan-c-gray-darker">类型：<text class="search-key marginleft5px">{{array_type[_searchType]}}</text>关键词：<text class="search-key">{{_searchKeywords}}</text></view>
+          <view @tap="closeSearch" class="my-cell-ft">
+            关闭
+          </view>
+        </view>
+        <view wx:else class="zan-panel nomarginbordertop menu-view heigth40">
+          <picker bindchange="bindPickerChangeType" value="{{index}}" range="{{array_type}}">
+            <view class="menu-item zan-c-gray-dark">
+              <view>{{array_type[search_type]}}</view>
+              <view class="zan-icon zan-icon-arrow my-icon-down"></view>
+            </view>
+          </picker>
+          <view>
+            <picker bindchange="bindPickerChangeStatus" value="{{index}}" range="{{array_status}}">
+              <view class="menu-item zan-c-gray-dark">
+                <view>{{array_status[search_status]}}
+                </view>
+                <view class="zan-icon zan-icon-arrow my-icon-down"></view>
+              </view>
+            </picker>
+          </view>
+          <view class="menu-item menu-item-end zan-c-gray-dark" @tap="pick">
+            <navigator hover-class="none" url="/pages/common/search?type=goods,voucher">
+              <view class="search-btn">搜索</view>
+            </navigator>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="zan-panel padding10 noborder" wx:for="{{list}}" wx:key wx:for-item="item">
+      <navigator hover-class="none" url="/pages/merchant/{{!(_isSearch?_searchType:search_type)?'goodsDetail':'voucherDetail'}}?id={{item.id}}">
+        <view class="list-content flex">
+          <image class="li-img" src="{{item.previews}}"/>
+          <view class="li-right">
+            <view class="flex">
+              <view class="name-des-view">
+                <view class="name">
+                  {{item.name}}
+                </view>
+                <view class="des zan-c-gray-dark">
+                  描述:{{item.desc?item.desc:'暂无'}}
+                </view>
+              </view>
+              <view class="price-count-view">
+                <view wx:if="{{search_type}}">面值:{{item.value}}</view>
+                <view class="count">
+                  <text class="zan-c-gray-dark">数量:</text>
+                  {{item.sum_count?item.sum_count:0}}</view>
+              </view>
+            </view>
+            <view class="price-view">
+              ￥{{item.price}}
+              <text class="theme-color" wx:if="{{item.exch_points}}">+ {{item.exch_points}}积分</text>
+            </view>
+            <view class='fontsize0'>
+              <view class="zan-tag {{item._status_class}}">{{item._status}}</view>
+              <view wx:if="{{item.is_active}}" class="zan-tag zan-tag--warn">活动</view>
+              <block wx:if="{{!search_type}}">
+                <view wx:if="{{item.is_recommend}}" class="zan-tag zan-tag--recd">推荐</view>
+              </block>
+              <view class="zan-tag zan-tag--warn f-r">{{(_isSearch?_searchType:search_type)?'代金券':'商品'}}</view>
+            </view>
+          </view>
+        </view>
+      </navigator>
+      <!--<view wx:if="item.examine_status!==3" class="btn-view">
+        <navigator hover-class="none" url="/pages/merchant/{{!(_isSearch?_searchType:search_type)?'goods':'voucher'}}?id={{item.id}}">
+          <view class="list-btn zan-btn zan-btn&#45;&#45;mini zan-btn&#45;&#45;danger zan-btn&#45;&#45;plain">修改</view>
+        </navigator>
+      </view>-->
+    </view>
+    <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+      <view class="zan-loadmore__tips">暂无数据</view>
+    </view>
+    <view class="add-view">
+      <view @tap="showMenu" hidden="{{show_menu}}" class="add-btn">
+        <view class="item-icon add-btn-icon zan-icon zan-icon-add-o"></view>
+      </view>
+      <view hidden="{{!show_menu}}" class="add-menu">
+        <navigator hover-class="none" url="/pages/merchant/goods">
+          <view class="add-menu-item">
+            <text class="item-text">新增商品</text>
+            <view class="item-icon zan-icon item-bg-f zan-icon-gift-card-pay"></view>
+          </view>
+        </navigator>
+        <navigator hover-class="none" url="/pages/merchant/voucher">
+          <view class="add-menu-item">
+            <text class="item-text">新增代金券</text>
+            <view class="item-icon zan-icon item-bg-g zan-icon-description"></view>
+          </view>
+        </navigator>
+      </view>
+    </view>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import {getLocaleFullDateString,getLocaleTimeString,getLocaleDateString,price} from "@/utils/format";
+export default class extends wepy.component {
+  config = {
+    navigationBarTitleText: "商品维护"
+  };
+  data = {
+    list: [],
+    count:0,
+    noData: false,
+    noMore: false,
+    page: 1,
+    search_status:0,
+    array_status:['全部','新单','审核通过','审核不通过',],
+    search_type:0,
+    array_type:['商品','代金券'],
+    show_menu:false,
+    hasShown:false,
+    _isSearch:false,//是否执行关键词搜索
+    _searchType:0,//搜索页面返回的类型
+    _searchKeywords:'',//搜索页面返回的关键词
+  }
+  limit = 10;
+  methods = {
+    bindPickerChangeType(e){
+      const value = e.detail.value;
+      this.search_type = parseInt(value);
+    },
+    bindPickerChangeStatus(e) {
+      const value = e.detail.value;
+      this.search_status = parseInt(value);
+    },
+    showMenu(){
+      this.show_menu = true;
+      this.$apply();
+    },
+    hidenMenu(){
+      this.show_menu = false;
+      this.$apply();
+    },
+    closeSearch(){
+      this._isSearch = false;
+      this._searchKeywords = '';
+      this.$root.$parent.globalData.doSearch = false;
+      this.reset();
+      this.fetchData();
+    },
+  }
+  onReachBottom() {//上拉加载
+    if (!this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchData();
+      }, 0);
+    }
+  }
+  watch = {
+    search_status(){
+      setTimeout(()=> {
+        this.reset();
+        this.fetchData();
+      },0)
+    },
+    search_type(){
+      setTimeout(()=> {
+        this.reset();
+        this.fetchData();
+      },0)
+    }
+  }
+  reset(){
+    this.list = [];
+    this.noData = false;
+    this.noMore = false;
+    this.page = 1;
+  }
+  onShow() {
+    if(this.show_menu){//如果按钮列表打开则关闭
+      this.show_menu = false;
+    }
+    const { merchant,doSearch,searchKeywords } = this.$root.$parent.globalData;
+    if(doSearch){
+      this._searchKeywords = searchKeywords.keywords;
+      this._searchType = searchKeywords.type==='goods'?0:1;
+      this._isSearch = true;
+      setTimeout(()=>{
+        this.reset();
+        this.fetchData();
+      },0)
+    }else{
+      setTimeout(()=>{
+        this.reset();
+        this.fetchData();
+      },0)
+    }
+  }
+  async fetchData() {
+    const { merchant } = this.$root.$parent.globalData;
+    let url;
+    let s_type;//商品或者是代金券类型
+    const opts = {
+      shop_id:merchant.shop.id,
+      limit:this.limit,
+      page:this.page,
+      count:true,
+    };
+    if(this._isSearch){//执行关键词搜索
+      url = this._searchType?api.vouchers:api.goods;
+      opts.name = this._searchKeywords;
+      s_type = this._searchType;
+    }else{
+      url = this.search_type?api.vouchers:api.goods;
+      s_type = this.search_type;
+      if(this.search_status){//筛选状态
+        opts.examine_status = this.search_status===1?0:(this.search_status===2?3:2);
+      }
+    }
+    let result;
+    try {
+      result  = await request(url, {
+        data:opts
+      });
+    } catch (e) {
+      result = {rows:[]};
+    }
+    const data = result.rows;
+    const my_list = data.map(obj=>{
+      obj.previews =  root + (s_type?obj.img.split(",")[0]:obj.previews.split(",")[0]);
+      obj._status = ['新单','','审核不通过','审核通过'][obj.examine_status!==undefined?obj.examine_status:1];
+      obj._status_class = ['zan-tag--new','zan-tag--primary','zan-tag--danger'][obj.examine_status];
+      obj.price = price(obj.price);
+      obj.value = price(obj.value);
+      return obj;
+    });
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.noMore = true;
+    }
+    this.list = this.page === 1?my_list:this.list.concat(my_list);
+    this.$apply();
+  }
+}
+</script>

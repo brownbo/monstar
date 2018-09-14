@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+html(lang="zh-cmn-Hans")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0,user-scalable=0")
+    meta(http-equiv="X-UA-Compatible", content="ie=edge")
+    title 跳转中...
+  body
+    script(src="https://res.wx.qq.com/open/js/jweixin-1.3.2.js")
+    script.
+      var delta = '#{delta}', url = '#{url}', type = '#{type}';
+      wx.miniProgram.getEnv(function(res) {
+        console.log('miniprogram:', res.miniprogram);
+        if (res.miniprogram) {
+          var func = wx.miniProgram[type] || wx.miniProgram.navigateBack;
+          func.call(wx.miniProgram, {
+            url: url,
+            delta: ~~delta || 1
+          });
+        }
+      });

@@ -1,0 +1,99 @@
+<style lang="less">
+.navbar {
+  display: flex;
+  .navbar-navs {
+    display: flex;
+    width: auto;
+    .navbar-nav {
+      padding: 20rpx 30rpx;
+      text-align: center;
+      background-color: #fff;
+      border-top: 1rpx solid #ddd;
+      border-right: 1rpx solid #ddd;
+      &:last-child {
+        border-bottom: 1rpx solid #ddd;
+      }
+    }
+    .navbar-nav-icon {
+      display: block;
+      margin: 0 auto 10rpx auto;
+      height: 50px;
+      width: 50px;
+    }
+    .navbar-nav-title {
+      display: block;
+    }
+  }
+  .navbar-tabs {
+    flex: 1;
+    height: 100%;
+  }
+}
+
+.navbar-left,
+.navbar-right {
+  flex-direction: row;
+  .navbar-navs {
+    flex-direction: column;
+    height: 100%;
+  }
+}
+
+.navbar-top,
+.navbar-bottom {
+  flex-direction: column;
+  .navbar-navs {
+    flex-direction: row;
+  }
+}
+</style>
+
+<template>
+  <view class="navbar {{'navbar-' + position}}">
+    <scroll-view class="navbar-navs" scroll-x="{{position === 'top' || position === 'bottom'}}" scroll-y="{{position === 'left' || position === 'right'}}">
+      <repeat for="{{navs}}" key="index" index="index" item="item">
+        <view class="navbar-nav {{activeIndex === index ? activeClass : ''}}" bindtap="tapView({{index}})">
+          <image wx:if="{{!!item.icon}}" src="{{item.icon}}" class="navbar-nav-icon"/>
+          <text class="navbar-nav-title">{{item.title}}</text>
+        </view>
+      </repeat>
+    </scroll-view>
+    <scroll-view class="navbar-tabs" scroll-y bindscrolltolower="onReachBottom">
+      <slot></slot>
+    </scroll-view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class extends wepy.component {
+  props = {
+    position: {
+      type: String,
+      default: "left"
+    },
+    navs: {
+      type: Array,
+      default: []
+    },
+    activeIndex: {
+      type: Number,
+      default: 0,
+      twoWay: true
+    },
+    activeClass: {
+      type: String,
+      default: ""
+    }
+  };
+
+  methods = {
+    tapView(activeIndex) {
+      this.activeIndex = activeIndex;
+    },
+    onReachBottom() {
+      this.$emit("onReachBottom");
+    }
+  };
+}
+</script>

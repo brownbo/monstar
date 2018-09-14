@@ -1,0 +1,27 @@
+<style>
+
+</style>
+
+<template>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class extends wepy.component {
+  onShow() {
+    console.log("check onShow");
+    this.scan();
+  }
+
+  scan() {
+    wx.scanCode({
+      onlyFromCamera: true,
+      success: res => {
+        wx.showToast({
+          title: res.result
+        });
+      }
+    });
+  }
+}
+</script>

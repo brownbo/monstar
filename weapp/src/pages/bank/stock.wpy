@@ -1,0 +1,220 @@
+<style>
+.stock-title {
+  padding: 40rpx 30rpx;
+  font-size: 32rpx;
+  color: #ff9900;
+}
+
+.stock-list {
+  background-color: #fff;
+}
+.stock-detail {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 30rpx;
+  border-top: 0.5px solid #e5e5e5;
+}
+
+.stock-detail:last-child {
+  border-bottom: 0.5px solid #e5e5e5;
+}
+
+.stock-detail-img {
+  width: 160rpx;
+  height: 160rpx;
+}
+.stock-detail-desc {
+  flex: 1;
+  margin: 0 40rpx;
+}
+.stock-detail-btns {
+}
+.stock-detail-btns button {
+  display: block;
+  width: 100%;
+  height: 26px !important;
+  line-height: 26px !important;
+}
+
+.title {
+  font-size: 15px;
+  color: #000;
+}
+.subtitle {
+  font-size: 13px;
+  color: #333;
+}
+.m-b-2 {
+  margin-bottom: 20rpx;
+}
+.m-r-2 {
+  margin-right: 20rpx;
+}
+
+.stock-detail-stock {
+  color: #ff9900;
+  font-size: 16px;
+}
+
+.fixed-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.stock-content {
+  padding-top: 60px;
+}
+
+.stock-header {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 0 30rpx;
+  font-size: 13px;
+  height: 50px;
+  border-bottom: 0.5px solid #ddd;
+  z-index: 1;
+}
+
+.stock-header-order {
+  color: #555;
+  padding: 30rpx 20rpx;
+}
+.stock-header-order-active {
+  color: #ff9900;
+}
+.stock-header-search {
+  flex: 1;
+  border-radius: 20px;
+  border: 0.5px solid #bbb;
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+  margin-left: 40rpx;
+  padding: 8rpx 30rpx;
+}
+</style>
+<template>
+  <view class="stock">
+    <view class="stock-header fixed-top">
+      <view @tap="changeOrder(ASC)" class="stock-header-order {{order === 'ASC' ? 'stock-header-order-active' : ''}}">升序</view>
+      <view @tap="changeOrder(DESC)" class="stock-header-order {{order === 'DESC' ? 'stock-header-order-active' : ''}}">降序</view>
+      <view class="stock-header-search">搜索</view>
+    </view>
+    <view class="stock-content">
+      <view class="stock-list" hidden="{{noData}}">
+        <repeat for="{{stocks}}" index="index" item="item">
+          <view class="stock-detail">
+            <image class="stock-detail-img" src="{{item.image}}"/>
+            <view class="stock-detail-desc">
+              <view class="title m-b-2">{{item.giftName}}</view>
+              <view>
+                <text class="subtitle m-r-2">当前库存</text>
+                <text class="stock-detail-stock">{{item.stock}}</text>
+              </view>
+            </view>
+            <view class="stock-detail-btns">
+              <button @tap="apply({{item.giftId}},{{item.giftName}})" class="zan-btn zan-btn--small zan-btn--plain zan-btn--primary m-b-2">申请</button>
+              <button @tap="refund({{item.giftId}},{{item.giftName}})" class="zan-btn zan-btn--small zan-btn--warn zan-btn--plain">退还</button>
+            </view>
+          </view>
+        </repeat>
+      </view>
+      <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+        <view class="zan-loadmore__tips">暂无数据</view>
+      </view>
+    </view>   
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "库存"
+  };
+
+  data = {
+    stocks: [],
+    noData: false,
+    noMore: false,
+    page: 1,
+    order: "ASC"
+  };
+
+  limit = 10;
+
+  onLoad() {
+    this.fetchStocks();
+  }
+
+  methods = {
+    changeOrder(order) {
+      if (this.order !== order) this.order = order;
+    },
+    apply(id, name) {
+      wx.navigateTo({
+        url:
+          "/pages/bank/apply-refund?action=apply&giftId=" +
+          id +
+          "&giftName=" +
+          name
+      });
+    },
+    refund(id, name) {
+      wx.navigateTo({
+        url: "/pages/bank/apply-refund?giftId=" + id + "&giftName=" + name
+      });
+    }
+  };
+
+  watch = {
+    order() {
+      this.page = 1;
+      this.stocks = [];
+      this.noData = false;
+      this.noMore = false;
+      this.fetchStocks();
+    }
+  };
+
+  onReachBottom() {
+    if (!this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchStocks();
+      }, 0);
+    }
+  }
+
+  async fetchStocks() {
+    let data = await request(api.stocks, {
+      data: {
+        page: this.page,
+        limit: this.limit,
+        netspot_id: this.$root.$parent.globalData.staff.netspot_id,
+        include: "gift",
+        order: "stock " + this.order
+      }
+    });
+    data = data.map(item => ({
+      giftName: item.gift.name,
+      stock: item.stock,
+      image: root + item.gift.imgs.split(",")[0],
+      giftId: item.gift.id
+    }));
+
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.noMore = true;
+    }
+    this.stocks = this.stocks.concat(data);
+    this.$apply();
+  }
+}
+</script>

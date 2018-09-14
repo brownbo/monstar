@@ -1,0 +1,408 @@
+<style>
+.panel-padding{
+  padding: 20px 30rpx;
+  margin-bottom: 10px;
+}
+.zan-tab__item--selected .zan-tab__title {
+  color: #f60;
+  border-color: #f60;
+}
+.zan-col{
+  text-align: center;
+}
+.col-h{
+  color: #000;
+  font-size: 16px;
+}
+.col-f{
+  font-size: 13px;
+}
+.menu-view{
+  display: flex;
+  font-size: 15px;
+  position: relative;
+}
+.menu-item{
+  display: flex;
+}
+.menu-item-end{
+  flex:1;
+  display: flex;
+  justify-content: flex-end;
+}
+.search-btn{
+  position: relative;
+  padding: 0rpx 20rpx 0rpx 20rpx;
+  line-height: 44px;
+}
+.search-btn:after{
+  position: absolute;
+  content: "";
+  display: block;
+  width: 0;
+  left: 0;
+  top:6px;
+  bottom:6px;
+  border-left: 0.5px solid #e5e5e5;
+}
+.auto-width{
+  width: auto;
+}
+.list-day-text{
+  font-size: 28rpx;
+  line-height: 40rpx;
+  width: 100vw;
+  white-space: nowrap;
+  overflow-x: scroll;
+}
+.list-li{
+  background-color: #fff;
+
+}
+.cell-flex{
+  display: flex;
+}
+.cell-img{
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background-color: #eee;
+}
+.zan-cell{
+  line-height: 60rpx;
+}
+.cell-c{
+  flex:1;
+  padding: 0rpx 16rpx;
+}
+.cell-r{
+  text-align: right;
+}
+.cell-money{
+  font-size: 28rpx;
+}
+.cell-small{
+  font-size: 24rpx;
+}
+.cell-status{
+  display: inline-block;
+  border:2rpx solid;
+  line-height: 40rpx;
+  border-radius: 8rpx;
+  padding: 0rpx 10rpx;
+  margin-right: 20rpx;
+}
+
+.cell-status-success{
+  border-color: #00aa00;
+  color: #00aa00;
+}
+.cell-status-error{
+  border-color: #ee3333;
+  color: #ee3333;
+}
+.cell-status-info{
+  border-color: #108ee9;
+  color: #108ee9;
+}
+.cell-status-pay{
+  border-color: #AF874D;
+  color: #AF874D;
+}
+.search-time-text{
+  padding: 16rpx 20rpx;
+}
+
+.cell-name{
+  overflow:hidden;
+  height:60rpx;
+}
+.marginlf10px{
+  margin-left: 40rpx;
+}
+.zan-tab__bd{
+  border-bottom: 0!important;
+}
+.nopadding{
+  margin-top: 0;
+}
+
+.nomarginbordertop{
+  margin-top: 0;
+  border-top: 0;
+}
+/*fixed*/
+.nobordertop{
+  border-top: 0;
+}
+.before-height{
+  height: 46px;
+}
+.fixed-child{
+  z-index: 2;
+  top: 0;
+  left: 0;
+  right:0;
+}
+.fixed {
+  position: fixed !important;
+}
+</style>
+<template>
+  <view class="zan-panel nomarginbordertop panel-padding">
+    <view class="zan-row">
+      <view class="zan-col zan-col-8">
+        <view class="col-h zan-font-bold">{{sumResultHead.pay_price}}</view>
+        <view class="col-f zan-c-gray-dark">今日交易金额</view>
+      </view>
+      <view class="zan-col zan-col-8">
+        <view class="col-h zan-font-bold">{{sumResultHead.pay_points}}</view>
+        <view class="col-f zan-c-gray-dark">今日交易积分</view>
+      </view>
+      <view class="zan-col zan-col-8">
+        <view class="col-h zan-font-bold">{{sumResultHead.pay_count}}</view>
+        <view class="col-f zan-c-gray-dark">今日交易笔数</view>
+      </view>
+    </view>
+  </view>
+  <view class="before-height">
+    <view class="fixed-child {{fixed?'fixed':''}}">
+      <view class="zan-panel nopadding {{fixed?'nobordertop':''}} menu-view">
+        <view class="zan-tab__bd auto-width">
+          <view @tap="changeTab('curr')" class="zan-tab__item {{s_type==='curr'?'zan-tab__item--selected':''}}">
+            <view class="zan-tab__title">当月核销明细</view>
+          </view>
+          <view @tap="changeTab('prev')" class="zan-tab__item {{s_type==='prev'?'zan-tab__item--selected':''}}">
+            <view class="zan-tab__title">上月核销明细</view>
+          </view>
+        </view>
+        <view class="menu-item menu-item-end zan-c-gray-dark" @tap="pick">
+          <view class="search-btn">搜索</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view hidden="{{s_type!=='other'}}"  class="search-time-text">
+    {{time_start}} 至 {{time_end}}
+  </view>
+  <view class="data-list">
+    <view class="list-li">
+      <view wx:if="{{list.length!==0}}" class="zan-cell">
+        <view class="list-day-text">
+          {{sumResult._count?sumResult._count:0}}笔
+          <text class="marginlf10px">￥{{sumResult.sum_price?sumResult.sum_price:0}}  积分:{{sumResult.sum_points?sumResult.sum_points:0}}</text>
+          <text class="marginlf10px">商品:{{sumResult.goods_count?sumResult.goods_count:0}}件 代金券:{{sumResult.voucher_count}}张</text>
+        </view>
+      </view>
+      <view class="zan-cell" wx:for="{{list}}" wx:key wx:for-item="item">
+        <image class="cell-img" src="{{item.type===1?item.voucher.previews[0]:item.goods.previews[0]}}"/>
+        <view class="cell-c">
+          <view class="cell-name">
+            核销{{item.type===1?('代金券*'+item._count+'张:'+item.voucher.name):('商品'+item._count+'件:'+item.goods.name)}}
+          </view>
+          <view class="cell-small zan-c-gray-dark">
+            <text>{{item._verify_time}}</text>
+          </view>
+        </view>
+        <view class="cell-r">
+          <view class="cell-money">{{item.amount?(item.total_points?(item.amount+" ¥ +"+item.total_points+" 分"):(item.amount+" ¥")):(item.total_points?(item.total_points+" 分"):'')}}</view>
+          <view class="cell-small zan-c-gray-dark">{{item.customer_name}}</view>
+        </view>
+      </view>
+    </view>
+    <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+      <view class="zan-loadmore__tips">暂无数据</view>
+    </view>
+  </view>
+  <datepicker :show.sync="showPicker"/>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import datepicker from "@/components/common/datepicker";
+import {getLocaleFullDateString,getLocaleTimeString,getLocaleDateString,price} from "@/utils/format";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "核销明细"
+  };
+  components ={
+    datepicker
+  }
+  data = {
+    s_type:'curr',
+    list: [],
+    sumResult: {},
+    sumResultHead: {},
+    noData: false,
+    noMore: false,
+    page: 1,
+    showPicker: false,
+    start:null,
+    end:null,
+    fixed:false
+  }
+  limit  = 10;
+  onLoad() {
+    const { merchant } = this.$root.$parent.globalData;
+    if(merchant){
+      setTimeout(()=> {
+        this.fetchGetSumData(merchant.shop.id);
+        this.fetchData();
+      },0)
+    }
+
+  }
+  onPageScroll({scrollTop}) {//滑动屏幕的时候触发
+    const fixed = scrollTop >= 90;
+    if (fixed !== this.fixed) {
+      this.fixed = fixed;
+      this.$apply();
+    }
+  }
+  onReachBottom() {//上拉加载
+   if (!this.noData && !this.noMore) {
+     setTimeout(() => {
+       this.page++;
+       this.fetchData();
+     }, 0);
+   }
+  }
+  computed = {
+    time_start () {
+      return getLocaleDateString(this.start);
+    },
+    time_end () {
+      return getLocaleDateString(this.end);
+    }
+  }
+  events = {
+    onDateConfirm(start, end) {
+      if (!!start) {
+        let [y, m, d] = start.split("-");
+        if (!d) d = 1;
+        start = +new Date(~~y, ~~m - 1, ~~d, 0, 0, 0);
+      }
+      if (!!end) {
+        let [y, m, d] = end.split("-");
+        if (!d) m = ~~m + 1;
+        end = +new Date(~~y, ~~m - 1, ~~d + 1, 0, 0, 0);
+      }
+      const date = new Date(end);
+      date.setSeconds(date.getSeconds()-1);
+      setTimeout(() => {
+        this.start = start;
+        this.end = date.getTime();
+        this.s_type = 'other';
+        this.resetData();
+        this.fetchData();
+      }, 0);
+    }
+  };
+  resetData() {
+    this.list = [];
+    this.noData = false;
+    this.noMore = false;
+    this.page = 1;
+  }
+  methods = {
+    changeTab(type) {
+      if (this.s_type!== type) {
+        this.s_type = type;
+      }
+    },
+    pick() {
+      this.showPicker = true;
+    }
+  };
+  watch = {
+    s_type() {
+      setTimeout(()=> {
+        this.resetData();
+        this.fetchData();
+      },0)
+    },
+
+  };
+  async fetchGetSumData(shop_id,id) {
+    const result  = await request(`${api.merchantIndex}/${shop_id}`, {
+      data: {}
+    });
+    result.pay_price = price(result.pay_price);
+    this.sumResultHead = result;
+    this.$apply();
+  }
+  async fetchData() {
+    const { merchant } = this.$root.$parent.globalData;
+    const opts = {
+      shop_id:merchant.shop.id,
+      verify_merchant_id:merchant.id,
+      include:'goods,voucher',
+      limit:this.limit,
+      page:this.page,
+      // status:3,
+      count:true,
+      order:'verify_time DESC'
+    }
+    const now = new Date();
+    const nY = now.getFullYear();
+    const nM = now.getMonth();
+    const nD = now.getDate();
+    if(this.s_type==='curr'){//当月核销明细
+      const s = new Date(nY,nM,1);
+      const e = new Date(nY,nM+1,1);
+      e.setSeconds(e.getSeconds()-1);
+      opts.verify_time = s.getTime().toString()+","+e.getTime().toString();
+    }else if(this.s_type==='prev') {//上月核销明细
+      const s = new Date(nY,nM-1,1);
+      const e = new Date(nY,nM,1);
+      e.setSeconds(e.getSeconds()-1);
+      opts.verify_time = s.getTime().toString()+","+e.getTime().toString();
+    }else{//时间段查询
+      opts.verify_time = this.start.toString()+","+this.end.toString();
+    }
+    const result  = await request(api.orders, {
+      data: opts,
+      
+    });
+
+    //获取统计数据
+    const SumResult  = await request(api.ordersStat, {
+      data: {
+        shop_id:opts.shop_id,
+        // status:opts.status,
+        verify_merchant_id:merchant.id,
+        verify_time:opts.verify_time
+      }
+    });
+    SumResult.sum_price = price(SumResult.sum_price);
+    this.sumResult = SumResult;
+    const data = result.rows;
+
+    const my_list = data.map(obj=>{
+      if(obj.type===1){
+        obj.voucher.previews =  obj.voucher.img?obj.voucher.img.split(",").map(item => root + item):[];
+      }else if(obj.type===2){
+        obj.goods.previews =  obj.goods.previews?obj.goods.previews.split(",").map(item => root + item):[];
+      }
+      const now = new Date();
+      const verifytime = new Date(obj.verify_time);
+      if(now.getFullYear()===verifytime.getFullYear()&&now.getMonth()===verifytime.getMonth()&&now.getDate()===verifytime.getDate()){
+        obj._verify_time = "今天 "+getLocaleTimeString(obj.verify_time);
+      }else{
+        obj._verify_time = getLocaleFullDateString(obj.verify_time);
+      }
+      obj.amount = price(obj.amount);
+      return obj;
+    });
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.noMore = true;
+    }
+    this.list = this.list.concat(my_list);
+    this.$apply();
+  }
+}
+</script>

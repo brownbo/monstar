@@ -1,0 +1,28 @@
+<style>
+page {
+  height: 100%;
+}
+</style>
+<template>
+  <web-view src="{{url}}"></web-view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "正在跳转..."
+  };
+
+  data = {
+    orderId: "",
+    url: ""
+  };
+
+  onLoad({ orderId, frontUrl, endUrl }) {
+    this.orderId = orderId;
+    this.url = `${api.payment.pay}?frontUrl=${frontUrl}&endUrl=${endUrl}&orderId=${orderId}`;
+  }
+}
+</script>

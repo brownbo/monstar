@@ -1,0 +1,87 @@
+<style lang="less">
+.tabbar {
+  height: 100%;
+  .tabbar-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 112rpx;
+    border-top: 1rpx solid #000;
+    background-color: #fff;
+    display: flex;
+    z-index: 999;
+    .tabbar-tab {
+      flex: 1;
+      text-align: center;
+      padding-top: 14rpx;
+      .tab-icon {
+        margin: 0 auto;
+        height: 48rpx;
+        width: 48rpx;
+        display: block;
+      }
+      .tab-label {
+        margin-top: 10rpx;
+        text-align: center;
+        font-size: 24rpx;
+      }
+    }
+  }
+  .tabbar-panels {
+    padding-bottom: 113rpx;
+  }
+
+  .tabbar-panel-loading {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #555;
+    font-size: 28rpx;
+  }
+}
+</style>
+
+<template>
+  <view class="tabbar">
+    <view class="tabbar-tabs" style="border-color: {{style.borderColor}}">
+      <repeat for="{{tabs}}" key="index" index="index" item="item">
+        <view class="tabbar-tab" style="{{activeIndex === index ? 'color: ' + style.selectedColor : 'color: ' + style.color}}" bindtap="onTabChange({{index}})">
+          <image class="tab-icon" src="{{activeIndex === index ? item.selectedIconPath : item.iconPath}}"/>
+          <view class="tab-label">{{item.text}}</view>
+        </view>
+      </repeat>
+    </view>
+    <view class="tabbar-panels">
+      <slot>
+      </slot>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class extends wepy.component {
+  props = {
+    tabs: Array,
+    style: {
+      type: Object,
+      default: {}
+    },
+    activeIndex: {
+      type: Number,
+      default: 0
+    }
+  };
+
+  methods = {
+    onTabChange(tabIndex) {
+      if (tabIndex !== this.activeIndex) {
+        this.$emit("onTabChange", tabIndex);
+      }
+    }
+  };
+}
+</script>

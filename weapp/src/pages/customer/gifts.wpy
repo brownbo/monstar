@@ -1,0 +1,218 @@
+<style>
+page {
+  height: 100%;
+}
+
+.gift {
+  height: 100%;
+}
+
+.gift-header {
+  padding: 10px;
+  background-color: #fff;
+}
+.gift-navbar {
+  height: calc(100% - 50px);
+}
+
+.gift-goods {
+  margin: 20rpx 20rpx 30rpx 20rpx;
+  background: #fff;
+}
+.gift-navbar-active {
+  color: #fff;
+  border-right-color: #ffcc00 !important;
+  background-color: #ffcc00 !important;
+}
+.searchbar {
+  flex: 1;
+  padding: 0 15px;
+  border: 0.5px solid #bbb;
+  border-radius: 40rpx;
+  font-size: 13px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  height: 30px;
+}
+.search-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+.search-input {
+  flex: 1;
+  margin: 0 5px;
+}
+.search-input-value {
+  color: #222;
+  font-size: 14px;
+}
+.search-clear {
+  font-size: 18px;
+  color: #bbb;
+}
+</style>
+<template>
+  <view class="gift">
+    <view class="gift-header">
+      <view class="searchbar">
+        <image class="search-icon" src="/images/search.png"/>
+        <navigator hover-class="none" url="/pages/common/search?type=gift&keywords={{keywords}}" class="search-input {{!!keywords ? 'search-input-value' : ''}}">{{keywords || "搜索"}}</navigator>
+        <view hidden="{{!keywords}}" class="search-clear zan-icon zan-icon-clear" @tap="clearSearch"></view>
+      </view>
+    </view>
+    <navbar class="gift-navbar" activeClass="gift-navbar-active" :navs.sync="giftTypes" :activeIndex="activeIndex">
+      <repeat for="{{gifts}}" key="index" index="index" item="item">
+        <view @tap="showGift({{item.id}})">
+          <gift class="gift-goods" :item="item"/>
+        </view>
+      </repeat>
+      <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+        <view class="zan-loadmore__tips">暂无数据</view>
+      </view> 
+    </navbar>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import Navbar from "@/components/common/navbar";
+import Goods from "@/components/customer/goods";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import { debounce } from "@/utils/utils";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "礼品"
+  };
+
+  components = {
+    navbar: Navbar,
+    gift: Goods
+  };
+
+  data = {
+    giftTypes: [],
+    activeIndex: 0,
+    gifts: [],
+    keywords: "",
+    page: 1,
+    limit: 10,
+    noMore: false,
+    noData: false
+  };
+
+  watch = {
+    activeIndex() {
+      setTimeout(() => {
+        this.reset();
+        this.fetchGifts();
+      }, 0);
+    }
+  };
+
+  events = {
+    onReachBottom: debounce(function() {
+      if (!this.noData && !this.noMore) {
+        setTimeout(() => {
+          this.page++;
+          this.fetchGifts();
+        }, 0);
+      }
+    }, 300)
+  };
+
+  methods = {
+    showGift(id) {
+      this.$navigate("/pages/customer/gift-goods?type=gift&id=" + id);
+    },
+    clearSearch() {
+      this.keywords = "";
+      setTimeout(() => {
+        this.reset();
+        this.fetchGifts();
+      }, 0);
+    }
+  };
+
+  async onLoad() {
+    await this.fetchTypes();
+    await this.fetchGifts();
+  }
+
+  onShow() {
+    const { doSearch, searchKeywords: { keywords } } = this.$parent.globalData;
+    if (doSearch) {
+      this.$parent.globalData.doSearch = false;
+      this.keywords = keywords;
+      setTimeout(() => {
+        this.reset();
+        this.fetchGifts();
+      }, 0);
+    }
+  }
+
+  reset() {
+    this.noMore = this.noData = false;
+    this.page = 1;
+    this.gifts = [];
+  }
+
+  async fetchTypes() {
+    const types = await request(api.giftTypes, {
+      data: { limit: 20, enabled: 1 }
+    });
+    types.forEach(type => {
+      type.title = type.name;
+      type.icon = root + type.img;
+    });
+    this.giftTypes = types;
+    this.$apply();
+  }
+
+  async fetchGifts() {
+    const id =
+      this.giftTypes[this.activeIndex] && this.giftTypes[this.activeIndex].id;
+    if (!id) {
+      this.noMore = this.noData = true;
+      return this.$apply();
+    }
+    const queries = {
+      gift_type_id: id,
+      limit: this.limit,
+      page: this.page,
+      include: "activity",
+      examine_status: 3,
+      enabled: 1
+    };
+
+    if (!!this.keywords) {
+      queries.name = this.keywords;
+    }
+
+    let gifts = await request(api.gifts, { data: queries });
+    gifts.forEach(gift => {
+      if (!!gift.imgs) gift.preview = root + gift.imgs.split(",")[0];
+
+      if (!!gift.activity && gift.activity.enabled) {
+        gift.price = gift.activity.price;
+        gift.exch_points = gift.activity.exch_points;
+        gift.pay_type = gift.activity.pay_type;
+      }
+
+      gift.amount = gift.price;
+      gift.price = (gift.amount / 100).toFixed(2);
+      gift.points = gift.exch_points;
+    });
+
+    if (gifts.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (gifts.length < this.limit) {
+      this.noMore = true;
+    }
+
+    this.gifts = this.gifts.concat(gifts);
+    this.$apply();
+  }
+}
+</script>
+ 

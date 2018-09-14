@@ -1,0 +1,207 @@
+<style>
+  .my-header {
+    padding: 20 rpx;
+    color: #ff9900;
+    font-size: 40 rpx;
+  }
+
+  .zan-text {
+    padding: 12px 15px;
+    background-color: #fff;
+  }
+
+  .zan-box {
+    background-color: #fff;
+  }
+
+  .zan-title {
+    text-align: center;
+    color: #f8a312;
+    font-size: 34 rpx;
+    padding: 12px 15px;
+  }
+
+  .zan-content {
+    padding: 3px 15px;
+  }
+
+  .content-box {
+    padding: 12px 3px;
+    border: 1px solid #eee;
+    min-height: 200px;
+  }
+
+  .zan-panel {
+    margin-top: 0;
+  }
+
+  .zan-btn--primary {
+    background-color: #ff9900;
+    border-color: #ffaa00;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .zan-cell-active {
+    position: relative;
+    display: flex;
+    padding: 8px 15px;
+    align-items: center;
+    line-height: 1.4;
+    font-size: 15px;
+    background-color: #fff;
+  }
+
+  .text-color {
+    color: #3283fa;
+  }
+
+  .zan-type {
+    position: relative;
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    line-height: 1.4;
+    font-size: 14px
+  }
+
+</style>
+
+<template>
+  <view wx:if="{{user_type!=2}}" class="my">
+    <view class="zan-text text-right text-color">
+      <view bindtap="toStatus">查询商户申请状态</view>
+      <!--<navigator url="/pages/merchant/chooseMerchant">商户申请状态查询</navigator>-->
+    </view>
+    <view class="zan-box">
+      <view class="zan-title">积分商城商户告知书</view>
+      <view class="zan-content">
+        <view class="content-box">
+          {{content}}
+        </view>
+      </view>
+      <view class="zan-cell-active">
+        <view class="zan-cell__bd">
+          <radio-group class="radio-group" bindchange="radioChange">
+            <label class="radio">
+              <radio value="notAgree" checked="{{notAgree}}"/>
+              不同意
+            </label>
+          </radio-group>
+        </view>
+        <view class="zan-cell__bd text-right">
+          <radio-group class="radio-group" bindchange="radioChange">
+            <label class="radio">
+              <radio value="isAgree" checked="{{isAgree}}"/>
+              我同意
+            </label>
+          </radio-group>
+        </view>
+      </view>
+    </view>
+    <view class="zan-type">
+      <view class="zan-cell__bd">
+        <button class="zan-btn zan-btn--primary" @tap="confirm" disabled="{{!showConfirm}}">确定</button>
+      </view>
+    </view>
+    <toptips/>
+    <toast/>
+  </view>
+</template>
+
+<script>
+
+  import wepy from "wepy";
+  import {api, root} from "@/config";
+  import request from "@/utils/request";
+  import toptips from "@/components/common/toptips";
+  import toast from "@/components/common/toast";
+  export default class extends wepy.page {
+    config = {
+      navigationBarTitleText: "商户申请"
+    };
+    /*amount金额支付pay_status支付方式sum_count代金券数量active_count活动代金券数量*/
+    data = {
+      isAgree: true,
+      notAgree: false,
+      user_type: '',
+      content: '',
+    };
+    computed = {
+      showConfirm() {
+        return !this.notAgree && this.isAgree;
+      }
+    };
+    components = {
+      toptips,
+      toast
+    };
+    methods = {
+      radioChange(e){
+        if (e.detail.value == 'notAgree') {
+          this.notAgree = true;
+          this.isAgree = false;
+        }
+        if (e.detail.value == 'isAgree') {
+          this.notAgree = false;
+          this.isAgree = true;
+        }
+      },
+
+      confirm() {
+        wx.navigateTo({
+          url: '/pages/merchant/apply'
+        });
+      },
+
+      toStatus(){
+        wx.navigateTo({
+          url: '/pages/merchant/chooseMerchant'
+        });
+      }
+    };
+
+
+    updateSuccess(data, type) {
+      wx.showToast({
+        title: type,
+        icon: "success",
+        duration: 1000
+      });
+      setTimeout(() => {
+        wx.navigateBack();
+      }, 1000);
+    }
+
+    updateFail(err) {
+      this.$invoke("toast", "showToast", err.message, 1200);
+    }
+
+    showTopTips(content, duration) {
+      this.$invoke("toptips", "showTopTips", content, duration);
+    }
+
+    onLoad() {
+      const customer = this.$root.$parent.globalData.customer;
+    //告知通知书内容
+      this.fetNoticeInfo();
+    }
+
+    async fetNoticeInfo() {
+      try {
+        const notices = await request(api.notifications, {
+          data: {enabled: 1}
+        });
+        if (notices.length >= 1) {
+          this.content = notices[0].content;
+        }
+        // 刷新
+        this.$wxpage.onShow();
+      } catch (err) {
+        console.error(err.message);
+      }
+    }
+  }
+</script>

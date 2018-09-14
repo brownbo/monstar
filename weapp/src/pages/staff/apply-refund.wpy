@@ -1,0 +1,195 @@
+<style>
+.apply-refund-header {
+  padding: 20rpx;
+  color: #ff9900;
+  font-size: 40rpx;
+}
+.zan-panel {
+  margin-top: 0;
+}
+.placeholder {
+  color: #888;
+}
+.zan-btn--primary {
+  background-color: #ff9900;
+  border-color: #ffaa00;
+}
+</style>
+<template>
+  <view class="apply-refund">
+    <view class="apply-refund-header">{{action}}礼品</view>
+    <view class="zan-panel">
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">礼品名称</view>
+        <view wx:if="{{!!giftId}}" class="zan-cell__bd zan-field__input">{{giftName}}</view>
+        <picker bindchange="giftChange" range-key="name" range="{{gifts}}" wx:else class="zan-cell__bd zan-field__input {{!selectedGiftName ? 'placeholder' : ''}}">{{selectedGiftName || ('请选择要' + action + '的礼品')}}</picker>
+      </view>
+      <view class="zan-cell zan-field">
+        <view class="zan-cell__hd zan-field__title">{{action}}数量</view>
+        <input type="number" class="zan-cell__bd zan-field__input" bindinput="bindAmountInput" placeholder="请输入{{action}}数量" />
+      </view>
+      <view class="zan-cell zan-field" wx:if="{{action === '退还'}}">
+        <view class="zan-cell__hd zan-field__title">退还网点</view>
+        <picker bindchange="netspotChange" range-key="name" range="{{netspots}}" class="zan-cell__bd zan-field__input {{!selectedNetspot ? 'placeholder' : ''}}">{{selectedNetspot || '请选择退还网点'}}</picker>
+      </view>
+    </view>
+    <view class="zan-btns">
+      <button class="zan-btn zan-btn--primary" @tap="confirm" disabled="{{!showConfirm}}">确定</button>
+    </view>
+    <toptips/>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import toptips from "@/components/common/toptips";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "退还"
+  };
+
+  data = {
+    action: "退还",
+    giftId: "",
+    giftName: "",
+    selectedGiftName: "",
+    selectedGiftId: "",
+    netspots: [],
+    netspotId: "",
+    selectedNetspot: "",
+    gifts: [],
+    count: 0,
+    stock: 0
+  };
+
+  components = {
+    toptips
+  };
+
+  computed = {
+    showConfirm() {
+      const show = (!!this.giftId || !!this.selectedGiftId) && !!this.count;
+      return this.action === "退还" ? show && !!this.netspotId : show;
+    }
+  };
+
+  watch = {
+    action() {
+      wx.setNavigationBarTitle({
+        title: this.action
+      });
+    }
+  };
+
+  methods = {
+    giftChange(e) {
+      const val = this.gifts[e.detail.value];
+      this.selectedGiftName = val.name;
+      this.selectedGiftId = val.id;
+    },
+    netspotChange(e) {
+      const val = this.netspots[e.detail.value];
+      this.selectedNetspot = val.name;
+      this.netspotId = val.id;
+    },
+    bindAmountInput(e) {
+      this.count = e.detail.value;
+    },
+    confirm() {
+      if (this.action === "退还" && this.stock < ~~this.count) {
+        return this.$invoke(
+          "toptips",
+          "showTopTips",
+          "退还数量不能超过当前库存",
+          1200
+        );
+      }
+      this.applyOrRefund();
+    }
+  };
+
+  onLoad({ action, giftId, giftName, stock }) {
+    if (action === "apply") {
+      this.action = "申领";
+    }
+    this.giftId = giftId || "";
+    this.giftName = giftName || "";
+    this.stock = stock || 0;
+    if (!this.giftId) {
+      this.fetchGifts();
+    }
+    this.fetchNespots();
+  }
+
+  async fetchGifts() {
+    const data = await request(api.stocks, {
+      data: {
+        //netspot_id: this.$root.$parent.globalData.staff.netspot_id,
+        limit: 100,
+        include: "gift",
+        availableGfit: true
+      }
+    });
+    this.gifts = data.map(item => ({ name: item.gift.name, id: item.gift_id }));
+    this.$apply();
+  }
+
+  async fetchNespots() {
+    const data = await request(api.netspots, {
+      data: {
+        limit: 1,
+        is_parent: 1
+      }
+    });
+    this.netspots = data.map(item => ({ name: item.name, id: item.id }));
+    this.netspotId = this.netspots[0].id;
+    this.selectedNetspot = this.netspots[0].name;
+    this.$apply();
+  }
+
+  async applyOrRefund() {
+    try {
+      if (this.action === "退还") {
+        await request(api.stockRecs, {
+          method: "POST",
+          data: {
+            gift_id: this.giftId || this.selectedGiftId,
+            active_type: 1,
+            allocation_out_id: this.$root.$parent.globalData.staff.netspot_id,
+            allocation_in_id: this.netspotId,
+            allocation_count: ~~this.count,
+            pass_count: ~~this.count,
+            create_time: new Date(),
+            status: 0
+          }
+        });
+      } else {
+        await request(api.examines, {
+          method: "POST",
+          data: {
+            gift_id: this.giftId || this.selectedGiftId,
+            sub_netspot_id: this.$root.$parent.globalData.staff.netspot_id,
+            netspot_id: this.netspotId,
+            status: 0,
+            _count: ~~this.count,
+            application_time: new Date(),
+            applicant_id: this.$root.$parent.globalData.staff.id
+          }
+        });
+      }
+
+      wx.showToast({
+        title: "操作成功",
+        icon: "success",
+        duration: 1000
+      });
+      setTimeout(() => {
+        wx.navigateBack();
+      }, 1000);
+    } catch (err) {
+      this.$invoke("toptips", "showTopTips", err.message, 1200);
+    }
+  }
+}
+</script>

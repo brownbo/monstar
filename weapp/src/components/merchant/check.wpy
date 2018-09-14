@@ -1,0 +1,25 @@
+<style>
+
+</style>
+
+<template>
+  <view></view>
+</template>
+
+<script>
+  import wepy from "wepy";
+  export default class extends wepy.component {
+    onShow() {
+      //扫码
+      wx.scanCode({
+        onlyFromCamera: true,
+        success: (res) => {
+          wx.navigateTo({
+            url: '/pages/common/verifyTodo?order_no='+ res.result+"&type=m",
+          })
+        }
+      })
+      this.$apply();
+    }
+  }
+</script>

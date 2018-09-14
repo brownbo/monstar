@@ -1,0 +1,93 @@
+<style lang="less" scoped>
+.merchant {
+  display: flex;
+  .preview {
+    width: 180rpx;
+    height: 180rpx;
+    .theme-image-placeholder {
+      padding-top: 0;
+    }
+    image {
+      width: 180rpx;
+      height: 180rpx;
+      vertical-align: middle;
+    }
+  }
+  .detail {
+    margin-left: 30rpx;
+    flex: 1;
+    .theme-text-placeholder {
+      width: 80%;
+    }
+    .vouchers {
+    }
+    .divider {
+      width: 100%;
+      border-top: 1rpx solid #e5e5e5;
+      margin: 10rpx 0;
+    }
+    .extra {
+      font-size: 24rpx;
+      color: #888;
+      .tel {
+      }
+      .addr {
+        display: flex;
+        .address {
+          flex: 1;
+        }
+        .distance {
+          margin: 0 20rpx;
+        }
+      }
+    }
+  }
+}
+.ellipsis--l2 {
+  padding-right: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+</style>
+
+<template>
+  <view class="merchant">
+    <view class="preview">
+      <image :class="{'theme-image-placeholder': !item || !item.preview}" src="{{item.preview}}" mode="aspectFit"/>
+    </view>
+    <view class="detail">
+      <view class="theme-typo-normal {{textPlaceholder}}">{{item.name}}</view>
+      <view class="theme-typo-small {{textPlaceholder}} ellipsis--l2">{{item.shop_desc}}</view>
+      <view class="voucher theme-color theme-typo-small {{textPlaceholder}}">{{item.voucher}}</view>
+      <!-- <repeat for="{{item.vouchers || []}}" key="index" inex="index" item="voucher">
+        <view class="theme-color theme-typo-small">{{voucher.name}}</view>
+      </repeat> -->
+      <view class="divider {{textPlaceholder}} theme-placeholder-hide"/>
+      <view class="theme-typo-tiny extra {{textPlaceholder}} theme-placeholder-hide">
+        <view class="tel">电话：{{item.connect_phone}}</view>
+        <view class="addr">
+          <text class="address">{{item.address}}</text>
+          <text wx:if="{{!!item.distance}}" class="distance">距离您 {{~~item.distance}} 米</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+export default class extends wepy.component {
+  props = {
+    item: Object
+  };
+
+  computed = {
+    textPlaceholder() {
+      return typeof this.item !== "object" ? "theme-text-placeholder" : "";
+    }
+  };
+}
+</script>

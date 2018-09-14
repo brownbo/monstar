@@ -1,0 +1,191 @@
+<style lang="less">
+@import "styles/zanui.less";
+@import "styles/theme.less";
+</style>
+
+<script>
+import wepy from "wepy";
+import { api } from "@/config";
+import request from "@/utils/request";
+import "wepy-async-function";
+
+const ROLE = "role";
+const COOKIES = "cookies";
+const OPEN_ID = "openid";
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      "pages/auth/index",
+      "pages/auth/sign",
+      "pages/auth/reset",
+
+      "pages/common/map",
+      "pages/common/search",
+      "pages/common/verifyTodo",
+      "pages/common/webview",
+
+      "pages/merchant/index",
+      "pages/merchant/clearDetail",
+      "pages/merchant/verifyDetail",
+      "pages/merchant/goodsDetail",
+      "pages/merchant/voucherDetail",
+      "pages/merchant/pointsDetail",
+      "pages/merchant/update",
+      "pages/merchant/updatePass",
+      "pages/merchant/goods",
+      "pages/merchant/voucher",
+      "pages/merchant/notice",
+      "pages/merchant/apply",
+      "pages/merchant/chooseMerchant",
+
+      "pages/merchant/applyStatus",
+
+      "pages/customer/index",
+      "pages/customer/gifts",
+      "pages/customer/gift-goods",
+      "pages/customer/exch",
+      "pages/customer/exch-result",
+      "pages/customer/recommend",
+      "pages/customer/merchants",
+      "pages/customer/merchant",
+      "pages/customer/voucher",
+      "pages/customer/gift-goods-list",
+      "pages/customer/evals",
+      "pages/customer/my-evals",
+      "pages/customer/myMessage",
+      "pages/customer/update",
+      "pages/customer/publishEval",
+      "pages/customer/activity",
+      "pages/customer/payment",
+      "pages/customer/order",
+      "pages/customer/refund",
+
+      "pages/staff/index",
+      "pages/staff/check",
+      "pages/staff/my",
+      "pages/staff/update",
+      "pages/staff/stock",
+      "pages/staff/apply-sign",
+      "pages/staff/apply-refund",
+      "pages/staff/user-valid"
+    ],
+    window: {
+      backgroundTextStyle: "dark",
+      navigationBarBackgroundColor: "#fff",
+      navigationBarTitleText: "积分商城",
+      navigationBarTextStyle: "black",
+      backgroundColor: "#f8f8f8"
+    }
+  };
+
+  defaultRole = "customer";
+  defaultPage = "/pages/customer/index";
+  rolePages = {
+    staff: "/pages/staff/index",
+    customer: "/pages/customer/index",
+    merchant: "/pages/merchant/index"
+  };
+
+  globalData = {
+    role: wx.getStorageSync(ROLE) || this.defaultRole,
+    openid: wx.getStorageSync(OPEN_ID) || "openid",
+    cookies: wx.getStorageSync(COOKIES),
+
+    staffId: "",
+    staff: null,
+    merchantId: "",
+    merchant: null,
+    customerId: "",
+    customer: null,
+
+    doSearch: false, //是否搜索关键词
+    searchHistory: wx.getStorageSync("search#history") || [],
+    searchKeywords: {} //搜索关键词{type:gift,keywords:'iphoneX'}
+  };
+
+  constructor() {
+    super();
+    this.use("requestfix");
+    this.use("promisify");
+  }
+
+  onLaunch() {
+    //this.getOpenId();
+  }
+
+  // 退出登录
+  logout() {
+    Object.assign(this.globalData, {
+      staffId: "",
+      staff: null,
+      merchantId: "",
+      merchant: null,
+      customerId: "",
+      customer: null
+    });
+    this.changeRole(this.defaultRole);
+    this.storeCookies("");
+    this.clearSearchHistory();
+  }
+
+  clearSearchHistory() {
+    wx.removeStorageSync("search#history");
+  }
+
+  // 修改身份
+  changeRole(role) {
+    wx.setStorageSync(ROLE, (this.globalData.role = role));
+  }
+
+  // 存储cookie
+  storeCookies(cookies) {
+    wx.setStorageSync(COOKIES, (this.globalData.cookies = cookies));
+  }
+
+  async getOpenId() {
+    if (!this.globalData.openid) {
+      wx.login({
+        success: res => {
+          wx.request({
+            url: api.openid,
+            data: {
+              code: res.code
+            },
+            success: res => {
+              if (res.data.success) {
+                wx.setStorageSync(
+                  "openid",
+                  (this.globalData.openid = res.data.data.openid)
+                );
+                console.log("got openid:", this.globalData.openid);
+              }
+            }
+          });
+        }
+      });
+    } else {
+      console.log("openid:", this.globalData.openid);
+    }
+  }
+
+  async sendSms(phoneNo) {
+    try {
+      await request(api.sendSms, {
+        data: {
+          phone: phoneNo
+        }
+      });
+      return true;
+    } catch (err) {
+      console.error(err.message);
+      wx.showToast({
+        title: err.message,
+        icon: "none",
+        duration: 1200
+      });
+      return false;
+    }
+  }
+}
+</script>

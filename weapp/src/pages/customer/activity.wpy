@@ -1,0 +1,220 @@
+<style lang="less">
+.page {
+  padding-bottom: 30rpx;
+}
+.header {
+  padding: 20rpx 30rpx;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  .scan {
+    .scan-icon {
+      width: 48rpx;
+      height: 48rpx;
+      margin: 0 auto;
+      display: block;
+    }
+    .scan-label {
+      text-align: center;
+      font-size: 24rpx;
+      color: #333;
+    }
+  }
+  .search {
+    flex: 1;
+  }
+  .sider {
+    margin-left: 40rpx;
+  }
+}
+
+.categories {
+  display: flex;
+  padding: 20rpx 0;
+  .category {
+    text-align: center;
+    width: 25%;
+    .category-icon {
+      margin: 0 auto;
+      height: 64rpx;
+      width: 64rpx;
+      display: block;
+    }
+    .category-label {
+      margin-top: 10rpx;
+      text-align: center;
+      font-size: 24rpx;
+      color: #888;
+    }
+  }
+}
+
+.recommend {
+  .recommend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .recommend-goods-list {
+    width: 100%;
+    .recommend-goods-wrapper {
+      width: 50%;
+      display: inline-block;
+      .recommend-goods {
+        padding: 30rpx;
+      }
+    }
+  }
+  .recommend-merchant {
+    padding: 30rpx 0 30rpx 30rpx;
+    border-bottom: 1rpx solid #e5e5e5;
+  }
+  .distances {
+    padding: 10rpx 0 10rpx 30rpx;
+    background-color: #fff;
+    .distance {
+      margin-right: 20rpx;
+    }
+  }
+}
+</style>
+
+<template>
+  <view class="recommend theme-divider-3">
+    <view class="recommend-header theme-container">
+      <view class="theme-color-light theme-typo-normal">热门礼品</view>
+      <navigator hover-class="none" url="/pages/customer/gift-goods-list?type=gift&is_active=1" class="theme-typo-middle">更多</navigator>
+    </view>
+    <view class="recommend-goods-list theme-bg-white">
+      <repeat for="{{recommendGoods}}" key="index" index="index" item="item">
+        <navigator hover-class="none" class="recommend-goods-wrapper" url="/pages/customer/gift-goods?type=gift&id={{item.id}}">
+          <goods class="recommend-goods vertical" :item="item"/>
+        </navigator>
+      </repeat>
+    </view>
+  </view>
+
+  <view class="recommend theme-divider-3">
+    <view class="recommend-header theme-container ">
+      <view class="theme-typo-normal theme-color-light">热门商户</view>
+      <navigator hover-class="none" url="/pages/customer/merchants?is_active=1" class="theme-typo-middle">更多</navigator>
+    </view>
+    <view class="theme-typo-small distances">
+      <text>附近（智能范围）：</text>
+      <repeat for="{{distances}}" key="index" index="index" item="item">
+        <text class="distance {{item === activeDistance ? 'theme-color-light': ''}}" bindtap="changeDistance({{item}})">{{item}}米</text>
+      </repeat>
+    </view>
+    <view class="recommend-merchants theme-bg-white">
+      <repeat for="{{recommendMerchants}}" key="index" index="index" item="item">
+        <view @tap="viewShop({{index}})">
+          <merchant class="recommend-merchant" :item="item"/>
+        </view>
+      </repeat>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import Goods from "@/components/customer/goods";
+import Merchant from "@/components/customer/merchant";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "活动"
+  };
+
+  components = {
+    goods: Goods,
+    merchant: Merchant
+  };
+
+  data = {
+    distances: [500, 1000, 2000, 5000],
+    activeDistance: 5000,
+    recommendGoods: ["", ""],
+    recommendMerchants: [""]
+  };
+
+  watch = {
+    activeDistance(distance) {
+      this.fetchRecommendMerchants();
+    }
+  };
+
+  methods = {
+    changeDistance(distance) {
+      this.activeDistance = distance;
+    },
+    viewShop(index) {
+      const shop = this.recommendMerchants[index];
+      this.$root.$preload(shop);
+      this.$root.$navigate(
+        "/pages/customer/merchant?id=" + shop.id + "&name=" + shop.name
+      );
+    }
+  };
+
+  onLoad() {
+    this.fetchRecommendGoods();
+    this.fetchRecommendMerchants();
+  }
+
+  async fetchRecommendGoods() {
+    const goods = await request(api.gifts, {
+      data: {
+        examine_status: 3,
+        enabled: 1,
+        is_hot: 1,
+        is_active: true,
+        limit: 8,
+        include: "activity"
+      }
+    });
+    goods.forEach(gift => {
+      if (!!gift.activity && gift.activity.enabled) {
+        gift.price = gift.activity.price;
+        gift.exch_points = gift.activity.exch_points;
+        gift.pay_type = gift.activity.pay_type;
+      }
+      if (!!gift.imgs) gift.preview = root + gift.imgs.split(",")[0];
+
+      gift.points = gift.exch_points;
+      gift.amount = gift.price;
+      gift.price = (gift.amount / 100).toFixed(2);
+    });
+    this.recommendGoods = goods;
+    this.$apply();
+  }
+
+  async fetchRecommendMerchants() {
+    const queries = {
+      is_active: 1,
+      distance: this.activeDistance,
+      limit: 8,
+      examine_status: 3,
+      enabled: 1,
+      status: 1
+    };
+    const merchants = await request(api.shops, {
+      data: queries
+    });
+    const { location } = this.$root.$parent.globalData;
+    if (location) {
+      queries.lat = location.lat;
+      queries.long = location.long;
+    }
+    merchants.forEach(merchant => {
+      if (!!merchant.shop_img) {
+        merchant.shop_img = merchant.shop_img.split(",").map(_ => root + _);
+        merchant.preview = merchant.shop_img[0];
+      }
+      merchant.voucher = (merchant.voucher && merchant.voucher.name) || "";
+    });
+    this.recommendMerchants = merchants;
+    this.$apply();
+  }
+}
+</script>

@@ -1,0 +1,371 @@
+<style>
+.header {
+  position: relative;
+}
+.goods-header {
+  height: 90px;
+}
+.gift-header {
+  height: 130px;
+}
+.distances {
+  padding-left: 30rpx;
+  height: 40px;
+  font-size: 12px;
+  color: #000;
+  line-height: 40px;
+}
+.distance {
+  margin-right: 20rpx;
+}
+.zan-tab__title {
+  font-size: 13px;
+}
+.zan-tab__item--selected .zan-tab__title {
+  color: #f60;
+  border-color: #f60;
+}
+.header-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+}
+
+.list {
+  background: #fff;
+  margin-bottom: 20px;
+}
+.goods-list {
+  margin-top: 90px;
+}
+
+.gift-list {
+  margin-top: 130px;
+}
+
+.goods-wrapper {
+  padding: 30rpx;
+  border-bottom: 0.5px solid #e5e5e5;
+}
+
+.align-vertical {
+  width: 50%;
+  display: inline-block;
+}
+
+.align-vertical .goods-wrapper {
+  border-bottom: none;
+}
+
+.searchbar-wrapper {
+  display: flex;
+  margin: 10px 10px 5px 10px;
+}
+
+.searchbar {
+  flex: 1;
+  padding: 0 15px;
+  border: 0.5px solid #bbb;
+  border-radius: 40rpx;
+  font-size: 13px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  height: 30px;
+}
+.search-icon {
+  width: 48rpx;
+  height: 48rpx;
+}
+.search-input {
+  flex: 1;
+  margin: 0 5px;
+}
+.search-input-value {
+  color: #222;
+  font-size: 14px;
+}
+.search-clear {
+  font-size: 18px;
+  color: #bbb;
+}
+.icon {
+  width: 30px;
+  height: 30px;
+  margin-left: 12px;
+}
+</style>
+<template>
+  <view class="gift-goods-list">
+    <view class="header {{type === 'gift' ? 'gift-header' : 'goods-header'}}">
+      <view class="header-wrapper" style="{{isScrollingDown ? 'position: fixed;' : ''}}">
+        <view class="searchbar-wrapper">
+          <view class="searchbar">
+            <image class="search-icon" src="/images/search.png"/>
+            <navigator hover-class="none" url="/pages/common/search?type={{type}}&keywords={{keywords}}" class="search-input {{!!keywords ? 'search-input-value' : ''}}">{{keywords || "搜索"}}</navigator>
+            <view hidden="{{!keywords}}" class="search-clear zan-icon zan-icon-clear" @tap="clearSearch"></view>
+          </view>
+          <image @tap="changeDisplay" class="icon" src="/images/display_{{vertical ? 'row' : 'column'}}.png"/>
+        </view>
+        <view class="distances" wx:if="{{type === 'gift'}}">
+          <text>附近（智能范围）：</text>
+          <repeat for="{{distances}}" key="index" index="index" item="item">
+            <text class="distance {{item === selectedDistance ? 'theme-color-light': ''}}" bindtap="changeDistance({{item}})">{{item}}米</text>
+          </repeat>
+        </view>
+        <view class="zan-tab">
+          <view class="zan-tab__bd">
+            <repeat for="{{conditions}}" key="index" index="index" item="item">
+              <view @tap="changeCondition({{index}})" class="zan-tab__item {{selectedConditionIndex === index ? 'zan-tab__item--selected' : ''}}">
+                <view class="zan-tab__title">{{item.label}}</view>
+              </view>
+            </repeat>
+          </view>
+        </view>
+      </view>        
+    </view>
+    <view class="list">
+      <repeat for="{{list}}" key="index" index="index" item="item">
+        <navigator hover-class="none" url="/pages/customer/gift-goods?type={{type}}&id={{item.id}}" class="{{vertical ? 'align-vertical' : ''}}">
+          <goods class="goods-wrapper {{vertical ? 'vertical' : 'horizontal'}}" :item="item"/>
+        </navigator>
+      </repeat> 
+    </view>
+    <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata" style="margin-top: 210px;">
+      <view class="zan-loadmore__tips">暂无数据</view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import goods from "@/components/customer/goods";
+import { throttle } from "@/utils/utils";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "热门礼品"
+  };
+
+  components = {
+    goods
+  };
+
+  data = {
+    is_active: false,
+    type: "gift",
+    keywords: "",
+    vertical: false,
+    distances: [500, 1000, 2000, 5000],
+    selectedDistance: 500,
+    conditions: [
+      { label: "全部" },
+      { label: "我可兑", value: "", requireAuthenticated: true },
+      { label: "2000积分", value: "1001,2001" },
+      { label: "1000积分", value: "501,1001" },
+      { label: "500积分", value: ",501" }
+    ],
+    selectedConditionIndex: 0,
+    list: [],
+    page: 1,
+    noMore: false,
+    noData: false,
+    isScrollingDown: true
+  };
+
+  scrollTop = 0;
+  limit = 10;
+
+  methods = {
+    changeDistance(distance) {
+      this.selectedDistance = distance;
+      setTimeout(() => {
+        this.reset();
+        this.fetchData();
+      }, 0);
+    },
+    changeCondition(index) {
+      const condition = this.conditions[index];
+      if (condition.requireAuthenticated && !this.$parent.globalData.customer) {
+        return this.$navigate("/pages/auth/sign?action=signIn&role=customer");
+      }
+      this.selectedConditionIndex = index;
+      setTimeout(() => {
+        this.reset();
+        this.fetchData();
+      }, 0);
+    },
+    clearSearch() {
+      this.keywords = "";
+      setTimeout(() => {
+        this.reset();
+        this.fetchData();
+      }, 0);
+    },
+    changeDisplay() {
+      this.vertical = !this.vertical;
+    }
+  };
+
+  onReachBottom() {
+    if (!this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchData();
+      }, 0);
+    }
+  }
+
+  // onPageScroll({ scrollTop }) {
+  //   this.handlePageScroll(scrollTop);
+  // }
+
+  handlePageScroll = throttle(
+    function(scrollTop) {
+      const isScrollingDown = scrollTop < this.scrollTop;
+      this.scrollTop = scrollTop;
+      if (isScrollingDown !== this.isScrollingDown) {
+        this.isScrollingDown = isScrollingDown;
+        this.$apply();
+      }
+    },
+    50,
+    100
+  );
+
+  onShow() {
+    const { doSearch, searchKeywords: { keywords } } = this.$parent.globalData;
+    if (doSearch) {
+      this.$parent.globalData.doSearch = false;
+      this.keywords = keywords;
+      setTimeout(() => {
+        this.reset();
+        this.fetchData();
+      }, 0);
+    }
+  }
+
+  onLoad({ type, keywords, is_active }) {
+    if (is_active) {
+      this.is_active = true;
+    }
+    if (type === "goods") {
+      this.type = type;
+      wx.setNavigationBarTitle({ title: "商品列表" });
+    }
+    if (!!keywords) {
+      this.keywords = keywords;
+    }
+    this.fetchData();
+  }
+
+  reset() {
+    this.noData = this.noMore = false;
+    this.page = 1;
+    this.list = [];
+  }
+
+  fetchData() {
+    this.type === "goods" ? this.fetchGoods() : this.fetchGifts();
+  }
+
+  async fetchGoods() {
+    const queries = {
+      examine_status: 3,
+      enabled: 1,
+      limit: this.limit,
+      page: this.page,
+      include: "activity"
+    };
+
+    if (this.is_active) {
+      queries.is_active = true;
+    }
+
+    if (this.keywords) {
+      queries.name = this.keywords;
+    }
+
+    let value = this.conditions[this.selectedConditionIndex].value;
+    if (value !== undefined) {
+      if (!value)
+        value = "," + (this.$parent.globalData.customer.exch_points + 1);
+      queries.exch_points = value;
+    }
+
+    let data = await request(api.goods, { data: queries });
+    data.forEach(item => {
+      if (!!item.activity && item.activity.enabled) {
+        item.price = item.activity.price;
+        item.exch_points = item.activity.exch_points;
+        item.pay_type = item.activity.pay_type;
+      }
+
+      item.amount = item.price;
+
+      if (!!item.previews) {
+        item.preview = root + item.previews.split(",")[0];
+      }
+      item.price = (item.amount / 100).toFixed(2);
+      item.points = item.exch_points;
+      item.vertical = "true";
+    });
+
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.noMore = true;
+    }
+    this.list = this.list.concat(data);
+    this.$apply();
+  }
+
+  async fetchGifts() {
+    const queries = {
+      limit: this.limit,
+      page: this.page,
+      include: "activity",
+      examine_status: 3,
+      enabled: 1
+    };
+    if (this.is_active) {
+      queries.is_active = true;
+    }
+    if (this.keywords) {
+      queries.name = this.keywords;
+    }
+
+    let value = this.conditions[this.selectedConditionIndex].value;
+    if (value !== undefined) {
+      if (!value)
+        value = "," + (this.$parent.globalData.customer.exch_points + 1);
+      queries.exch_points = value;
+    }
+    let data = await request(api.gifts, { data: queries });
+    data.forEach(item => {
+      if (!!item.imgs) {
+        item.preview = root + item.imgs.split(",")[0];
+      }
+      if (!!item.activity && item.activity.enabled) {
+        item.price = item.activity.price;
+        item.exch_points = item.activity.exch_points;
+        item.pay_type = item.activity.pay_type;
+      }
+
+      item.amount = item.price;
+      item.price = (item.amount / 100).toFixed(2);
+      item.points = item.exch_points;
+    });
+
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.noMore = true;
+    }
+    this.list = this.list.concat(data);
+    this.$apply();
+  }
+}
+</script>

@@ -1,0 +1,386 @@
+<style>
+
+.panel-padding{
+  padding: 40rpx 30rpx;
+}
+.zan-tab__item--selected .zan-tab__title {
+  color: #f60;
+  border-color: #f60;
+}
+.zan-col{
+  text-align: center;
+}
+.col-h{
+  color: #000;
+  font-size: 32rpx;
+}
+.col-f{
+  font-size: 26rpx;
+}
+.menu-view{
+  display: flex;
+  font-size: 30rpx;
+  position: relative;
+}
+.menu-item{
+  padding: 16rpx 30rpx;
+  display: flex;
+}
+.menu-item-end{
+  flex:1;
+  display: flex;
+  justify-content: flex-end;
+}
+.search-btn{
+  padding: 0rpx 0rpx 0rpx 20rpx;
+  border-left: 1rpx #eee solid;
+}
+.marginleft{
+  margin-left: 100rpx;
+}
+.my-icon-down{
+  font-size: 20rpx;
+  transform:rotate(90deg);
+}
+.list-day-text{
+  font-size: 28rpx;
+  line-height: 40rpx;
+}
+.list-li{
+  background-color: #fff;
+}
+.cell-img{
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background-color: #eee;
+}
+.zan-cell{
+  line-height: 60rpx;
+}
+.cell-c{
+  padding: 0rpx 16rpx;
+  
+}
+.cell-money{
+  font-size: 34rpx;
+}
+.cell-status{
+  display: inline-block;
+  border:2rpx solid;
+  line-height: 40rpx;
+  border-radius: 8rpx;
+  padding: 0rpx 10rpx;
+  margin-right: 20rpx;
+}
+.zan-tag{
+  margin-right: 20rpx;
+}
+.zan-tag--recd{
+  background-color: #108ee9;
+  border-color: #108ee9;
+}
+.zan-tag--new{
+  background-color: #AF874D;
+  border-color: #AF874D;
+}
+.search-time-text{
+  padding: 16rpx 20rpx;
+}
+.gift-goods-panel {
+  background: #fff;
+  margin-top: 30rpx;
+  border-top: 0.5px solid #e5e5e5;
+  border-bottom: 0.5px solid #e5e5e5;
+}
+.panel-header--title {
+  font-weight: bolder;
+  font-size: 32rpx;
+  color: #333;
+  border-left: 3px solid #ffcc00;
+  margin: 20rpx;
+  padding-left: 4px;
+  line-height: 1;
+}
+.desc-text{
+  border-top: 0.5px solid #e5e5e5;
+}
+.cell-img{
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background-color: #eee;
+}
+.zan-cell{
+  line-height: 60rpx;
+}
+.cell-c{
+  padding: 0rpx 16rpx;
+}
+.cell-r{
+  flex:1;
+  flex-direction: column;
+  display: flex;
+  justify-content: flex-end;
+  text-align:center;
+}
+.cell-money{
+  font-size: 30rpx;
+}
+.cell-small{
+  font-size: 24rpx;
+}
+.zan-tag{
+  margin-left: 20rpx;
+}
+.desc{
+  font-size: 30rpx;
+  padding: 12px 15px;
+}
+.flex-1{
+  flex:1;
+}
+.v-btn{
+  padding: 16rpx 20rpx;
+  margin-top: 20rpx;
+  margin: 0;
+}
+.verify-result-view{
+  text-align: center;
+  margin-top: 70rpx;
+}
+.v-success-icon{
+  font-size: 180rpx;
+  color:#09BB07;
+  margin-bottom: 40rpx;
+}
+page{
+  background-color: #fff;
+}
+.text-title{
+  margin-bottom: 10rpx;
+}
+.v-btn{
+  margin-bottom: 10rpx;
+}
+.err-shop-name{
+  color:#3283fa;
+  padding: 0px 4rpx;
+  font-size: 28rpx;
+}
+.v-bg-line{
+  background-color: #f8f8f8;
+  height: 10px;
+
+}
+.nopadding{
+  margin-top: 0;
+}
+</style>
+<template>
+  <view hidden="{{hiddenAll}}" class="theme-bg-white">
+    <view hidden="{{!showMain}}">
+      <view class="v-bg-line"></view>
+      <view class="zan-panel nopadding">
+        <view class="panel-header--title">{{['礼品','代金券','商品'][result.type]}}信息</view>
+        <view class="zan-cell desc-text">
+          <image class="cell-img" src="{{result.preview}}"/>
+          <view class="cell-c">
+            <view class="cell-name">
+              {{currObj.name}}
+            </view>
+            <view class="cell-small zan-c-gray-dark">
+              支付方式:<view class="zan-tag zan-tag--primary">{{['积分','支付','积分+支付'][result.pay_type?result.pay_type:0]}}</view>
+            </view>
+          </view>
+          <view class="cell-r">
+            <view class="cell-money zan-font-bold">{{result.pay_type===0?(result.exch_points+"分"):(result.pay_type===1?("¥"+result.amount):("¥"+result.amount+"+"+result.exch_points+'分'))}}</view>
+            <view wx:if="{{isVoucher}}" class="cell-small zan-c-gray-dark">面值:{{currObj.value?(currObj.value/100):0}}</view>
+            <view wx:if="{{result.type===0}}" class="cell-small zan-c-gray-dark">品牌:{{currObj.brand?currObj.brand:'无'}}</view>
+          </view>
+        </view>
+        <view  class="desc zan-c-gray-dark">
+          描述:{{currObj.desc}}
+        </view>
+      </view>
+      <view class="v-bg-line"></view>
+      <view class="zan-panel nopadding">
+        <view class="panel-header--title">客户信息</view>
+        <view class="zan-cell desc-text">
+          <image class="cell-img" src="{{result.customer_img}}"/>
+          <view class="cell-c flex-1">
+            <view class="cell-name">
+              {{result.customer.name}}
+            </view>
+            <view class="cell-small zan-c-gray-dark">
+              <view>
+                <view class="zan-icon zan-icon-phone"></view>
+                {{result.customer.phone}}
+              </view>
+              <!-- <view>
+                <view class="zan-icon zan-icon-card"></view>
+                {{result.customer.certificate_code}}
+              </view> -->
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="zan-panel zan-btns">
+        <button @tap="verifyTodo" class="zan-btn theme-bg-border-color zan-btn--primary {{loading?'zan-btn--loading':''}}">确认核销</button>
+        <view @tap="back" class="zan-btn">取消</view>
+      </view>
+    </view>
+    <view hidden="{{showMain}}" class="verify-result-view">
+      <view class="v-success-icon">
+        <icon type="{{status==='success'?'success':'warn'}}" size="70" color="{{status==='success'?'#f8a312':''}}"/>
+      </view>
+      <view wx:if="{{status==='success'}}" class="text-area">
+        <view class="text-title zan-font-16 theme-color">核销成功!</view>
+        <view class="text-content zan-font-12 zan-c-gray-dark">点击按钮返回主界面或者退出程序。</view>
+      </view>
+      <view wx:if="{{status==='error'}}" class="text-area">
+        <view class="text-title zan-font-16 zan-c-red">您不能进行核销!</view>
+        <view  class="text-content zan-font-12 zan-c-gray-dark">原因:{{error_type==='errStatus'?(error_msg[error_status]):'未找到该订单。'}}</view>
+      </view>
+      <view class="v-btn">
+        <view @tap="back" class="zan-btn zan-btn--default">{{status==='success'?'完成':'确定'}}</view>
+      </view>
+    </view>
+    <toast :showToast.sync="showToast"/>
+  </view>
+
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import toast from "@/components/common/toast";
+import {getLocaleFullDateString,getLocaleTimeString,getLocaleDateString,price} from "@/utils/format";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "核销确认"
+  };
+  components ={
+    toast
+  }
+  data = {
+    isVoucher:false,
+    isGift:false,
+    currObj:{},
+    result:{},
+    loading:false,
+    order_no:'',
+    merchant:{},
+    staff:{},
+    hiddenAll:true,//刚开始影藏所有元素
+    showMain:false,//决定是否显示主页面
+    status:'success',//操作状态
+    error_msg:['该订单还未支付','该订单正在支付中','','该订单已被核销'],//status为error时 错误类型 errStatus||notFound
+    error_status:'',
+    error_type:'',//status为error时 错误类型 errStatus||notFound
+
+    type:'',//订单类型 m/s
+  }
+  onLoad({order_no,type}) {
+    this.type = type;
+    const { merchant,staff } = this.$root.$parent.globalData;
+    if(type==='m'&&merchant){
+      this.merchant = merchant;
+    }else if(type==='s'&&staff){
+      this.staff = staff;
+    }
+    this.order_no = order_no;
+    this.fetchData();
+  }
+  methods = {
+    verifyTodo(){
+      this.loading = true;
+      this.$apply();
+      this.verify();
+    },
+    back(){
+      wx.navigateBack();
+    }
+  };
+  showToast(content, duration) {
+    this.$invoke("toast", "showToast", content, duration);
+  }
+  async fetchData() {
+    let data = {
+      include:'shop,goods,voucher,customer,gift',
+      order_no:this.order_no,
+    }
+    if(this.type==='m'){
+      data.shop_id = this.merchant.shop.id;
+
+    }
+    if(this.type==='s'){
+      data.netspot_id = this.staff.netspot_id;
+    }
+
+    let result  = await request(`${api.orders}`, {
+      data: data,
+    });
+
+    result = result.length?result[0]:'';
+    this.hiddenAll = false;
+    //const identity = result.type===0?(parseInt(result.netspot_id)!==parseInt(this.staff.netspot_id)):(parseInt(result.shop_id)!==parseInt(this.merchant.shop.id));
+    if(!result){
+      this.status = 'error';
+      this.error_type = 'notFound';
+      this.$apply();
+      return;
+    }else if(result.status===0||result.status===1||result.status===3){
+      this.error_status = result.status;
+      this.status = 'error';
+      this.error_type = 'errStatus';
+      this.$apply();
+      return;
+    }
+    this.isVoucher = result.type===1;
+    this.isGift = result.type===0;
+    this.currObj = this.isVoucher?result.voucher:(result.type===2?result.goods:result.gift);
+    const img = this.isVoucher?(this.currObj?this.currObj.img:''):(result.type===2?(this.currObj?this.currObj.previews:''):(this.currObj?this.currObj.imgs:''));
+    result.preview =  img?(root + img.split(',')[0]):'';
+    result.customer_img =  result.customer?(result.customer.img?(root+result.customer.img.split(',')[0]):''):'';
+    /*const str =  result.customer.certificate_code;
+    var fstStr = str.substring(0,12);
+    var matchExp = /w/g;
+    result.customer.certificate_code = fstStr+"******";*/
+    result.amount = price(result.amount);
+    this.showMain = true;
+    this.result = result;
+    this.$apply();
+  }
+  async verify() {
+
+    const opts = {
+      verify_time:new Date(),
+      status:3,
+      verify_type:this.result.type,
+    };
+    if(this.isGift){
+      opts.verify_staff_id = this.staff.id;
+       opts.verify_people_type = 2;
+    }else{
+      opts.verify_merchant_id = this.merchant.id;
+      opts.verify_people_type = 1;
+    }
+    try {
+      const result  = await request(`${api.orders}/${this.result.id}`, {
+        method:'put',
+        data: opts
+      });
+      this.showMain = false;
+      this.status = 'success';
+    } catch (e) {
+      this.status = 'error';
+      this.showToast('核销失败,请重试!');
+    }
+    this.loading = false;
+    setTimeout(()=> {
+      this.$apply();
+    },500)
+  }
+}
+</script>

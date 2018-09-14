@@ -1,0 +1,170 @@
+<style>
+
+</style>
+
+<template>
+  <view>
+    <tabbar :tabs="tabs" :style="tabStyle" :activeIndex.sync="activeIndex">
+      <home :lat="lat" :long="long" class="tab-pannel" hidden="{{activeIndex !== 0}}"/>
+      <exch class="tab-pannel" hidden="{{activeIndex !== 1}}"/>
+      <records class="tab-pannel" hidden="{{activeIndex !== 2}}"/>
+      <points class="tab-pannel" hidden="{{activeIndex !== 3}}"/>
+      <my class="tab-pannel" hidden="{{activeIndex !== 4}}"/>
+    </tabbar>
+  </view>
+
+</template>
+
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import { throttle } from "@/utils/utils";
+import TabbarMixin from "@/mixins/tabbar";
+import Tabbar from "@/components/common/tabbar";
+import Home from "@/components/customer/home";
+import Exch from "@/components/customer/exch";
+import Points from "@/components/customer/points";
+import Records from "@/components/customer/records";
+import My from "@/components/customer/my";
+
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "积分商城"
+  };
+
+  components = {
+    tabbar: Tabbar,
+    home: Home,
+    exch: Exch,
+    points: Points,
+    records: Records,
+    my: My
+  };
+
+  mixins = [TabbarMixin];
+
+  data = {
+    tabs: [
+      {
+        text: "首页",
+        title: "积分商城",
+        iconPath: "/images/customer/shouye_1.png",
+        selectedIconPath: "/images/customer/shouye_2.png",
+        component: "home"
+      },
+      {
+        text: "我能兑",
+        title: "我能兑",
+        iconPath: "/images/customer/wonengdui_1.png",
+        selectedIconPath: "/images/customer/wonengdui_2.png",
+        component: "exch",
+        requireAuthentication: true,
+        enablePageScroll: true,
+        enableReachBottom: true
+      },
+      {
+        text: "兑换袋",
+        title: "兑换明细",
+        iconPath: "/images/customer/duihuandai_1.png",
+        selectedIconPath: "/images/customer/duihuandai_2.png",
+        component: "records",
+        requireAuthentication: true,
+        enablePageScroll: true,
+        enableReachBottom: true
+      },
+      {
+        text: "积分库",
+        title: "我的积分",
+        iconPath: "/images/customer/jifenku_1.png",
+        selectedIconPath: "/images/customer/jifenku_2.png",
+        component: "points",
+        requireAuthentication: true
+      },
+      {
+        text: "我",
+        title: "个人信息",
+        iconPath: "/images/customer/wo_1.png",
+        selectedIconPath: "/images/customer/wo_2.png",
+        component: "my",
+        requireAuthentication: true,
+        requireAuthRoleSelection: true
+      }
+    ],
+    tabStyle: {
+      color: "#888",
+      selectedColor: "#f8a312",
+      backgroundColor: "#fff",
+      borderColor: "#bbb"
+    },
+    activeIndex: 0
+  };
+
+  events = {
+    onTabChange(index) {
+      if (
+        this.tabs[index].requireAuthentication &&
+        !this.$parent.globalData.customer
+      ) {
+        this.$navigate(
+          "/pages/auth/sign?action=signIn" +
+            (this.tabs[index].requireAuthRoleSelection ? "" : "&role=customer")
+        );
+      } else {
+        this.$mixins[0].events.onTabChange.call(this, index);
+      }
+    }
+  };
+
+  onLoad() {
+    this.fetchCustomerInfo();
+    wx.getLocation({
+      type: "wgs84",
+      success: res => {
+        console.log(res);
+        this.$parent.globalData.location = {
+          lat: res.latitude,
+          long: res.longitude
+        };
+        // 广播
+        this.$broadcast("location", this.$parent.globalData.location);
+      }
+    });
+  }
+
+  onPageScroll({ scrollTop }) {
+    this.invokeTabScroll(scrollTop);
+  }
+
+  invokeTabScroll = throttle(
+    function(scrollTop) {
+      if (this.tabs[this.activeIndex].enablePageScroll) {
+        this.invokeTab("onPageScroll", scrollTop);
+      }
+    },
+    50,
+    100
+  );
+
+  async fetchCustomerInfo() {
+    let { cookies, openid, customer } = this.$parent.globalData;
+    if (!cookies || !!customer) return;
+    // 同步信息
+    try {
+      const customer = await request(api.currentCustomer, {
+        header: {
+          Cookie: cookies
+        },
+        data: { openid }
+      });
+      if (!customer) {
+        throw Error();
+      }
+      this.$parent.globalData.customer = customer;
+      this.$parent.globalData.customerId = customer.id;
+      // 刷新
+      this.$wxpage.onShow();
+    } catch (err) {}
+  }
+}
+</script>

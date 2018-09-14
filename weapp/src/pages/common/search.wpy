@@ -1,0 +1,280 @@
+<style>
+page {
+  background-color: #fff;
+  color: #333;
+}
+.nopadding {
+  margin-top: 0;
+}
+.s-margin {
+  margin-top: 10px;
+  padding: 16rpx 20rpx;
+  display: flex;
+  border-bottom: 0.5px solid #e5e5e5;
+}
+.search-input-view {
+  display: flex;
+  border-radius: 15px;
+  background-color: #f8f8f8;
+  height: 30px;
+  flex: 1;
+  margin-right: 15px;
+}
+.search-icon {
+  margin-left: 10px;
+  width: 25px;
+  height: 25px;
+  padding: 2.5px;
+}
+.search-del {
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+  margin-left: 0;
+  color: #bbbbbb;
+  padding: 0;
+}
+.search-input {
+  font-size: 14px;
+  height: 30px;
+  flex: 1;
+}
+.history-view {
+  padding: 16rpx 20rpx;
+}
+.history-head {
+  display: flex;
+  justify-content: space-between;
+}
+.history-list {
+  padding-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.history-li {
+  margin-right: 10px;
+  padding: 4px 10px;
+  background-color: #f8f8f8;
+  font-size: 12px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+.btn-gray {
+  background-color: #f8f8f8;
+}
+.btn-active {
+  background-color: #f8a312;
+  color: #fff;
+}
+.results {
+  border-bottom: 0.5px solid #e5e5e5;
+}
+.keywords {
+  color: #f8a312;
+  padding: 0px 3px;
+}
+.s-type {
+  font-weight: 700;
+  color: #333;
+  padding: 0px 3px;
+}
+.history-del {
+  color: #ee3333;
+  font-size: 14px;
+}
+</style>
+<template>
+  <view  class="theme-bg-white">
+    <view class="s-margin">
+      <view class="search-input-view">
+        <image class="search-icon" src="/images/search.png"/>
+        <input class="search-input" value="{{inputValue}}" @input="changeValue" confirm-type="search" @confirm="confirm" placeholder="搜索{{placeholder}}名称" auto-focus/>
+        <view hidden="{{!inputValue}}" @tap="clear" class="search-del zan-icon zan-icon-clear"></view>
+      </view>
+      <button @tap="{{inputValue?'search':'cancel'}}" class="zan-btn zan-btn--small {{inputValue?'btn-active':'btn-gray'}} ">{{inputValue?'搜索':'取消'}}</button>
+    </view>
+    <view hidden="{{!!inputValue}}" class="history-view">
+      <view class="history-head">
+        <view class="history-text">搜索历史</view>
+        <view @tap="delSearch" class="history-del">清除</view>
+      </view>
+      <view class="history-list">
+        <view @tap="search({{item.type}},{{item.keywords}})" wx:for="{{searchHistory}}" wx:key class="history-li">{{item.keywords}}</view>
+      </view>
+    </view>
+    <view hidden="{{!inputValue}}" class="results">
+      <view hidden="{{!showGoods||showLength===1}}" @tap="search('goods',{{inputValue}})" class="zan-cell">
+          在<text class="s-type">商品</text>中搜索 <text class="keywords">{{inputValue}}</text>
+      </view>
+      <view hidden="{{!showVoucher||showLength===1}}" @tap="search('voucher',{{inputValue}})" class="zan-cell">
+          在<text class="s-type">代金券</text>中搜索<text class="keywords">{{inputValue}}</text>
+      </view>
+      <view hidden="{{!showGift||showLength===1}}" @tap="search('gift',{{inputValue}})" class="zan-cell">
+          在<text class="s-type">礼品</text>中搜索<text class="keywords">{{inputValue}}</text>
+      </view>
+      <view hidden="{{!list.length}}">
+        <view wx:for="{{list}}" wx:key @tap="search(,{{item.name}})" class="zan-cell">
+          <text class="keywords">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "搜索"
+  };
+  data = {
+    showGoods: false,
+    showVoucher: false,
+    showGift: false,
+    showLength: 0,
+    inputValue: "",
+    list: [],
+    type: "",
+    searchHistory: []
+  };
+  onLoad({ type, keywords }, preloadData) {
+    //type = 'gift,goods';
+    this.showLength = type.split(",").filter(item => !!item).length;
+    this.showGoods = type.indexOf("goods") !== -1;
+    this.showVoucher = type.indexOf("voucher") !== -1;
+    this.showGift = type.indexOf("gift") !== -1;
+    this.type = type;
+    this.searchHistory = wx.getStorageSync("search#history");
+    this.onSearch =
+      preloadData && preloadData.preload && preloadData.preload.onSearch;
+    this.inputValue = keywords || "";
+
+    this.$root.$parent.globalData.doSearch = false; //页面加载后设值doSearch为false
+  }
+  computed = {
+    placeholder() {
+      let text = "";
+      const { showGoods, showVoucher, showGift, showLength } = this;
+      if (showLength === 1) {
+        if (showGoods) text = "商品";
+        else if (showVoucher) text = "代金券";
+        else if (showGift) text = "礼品";
+      } else if (showLength === 2) {
+        text = !showGoods
+          ? "代金券或礼品"
+          : !showVoucher ? "商品或礼品" : "商品或代金券";
+      } else if (showLength === 3) {
+        text = "商品、代金券或礼品";
+      }
+      return text;
+    }
+  };
+  methods = {
+    changeValue(e) {
+      const value = e.detail.value;
+      this.inputValue = value.replace(/(^\s*)|(\s*$)/g, ""); //去除两端空格
+      if (!this.inputValue) this.list = [];
+    },
+    clear() {
+      this.inputValue = "";
+    },
+    confirm() {
+      //键盘上的确认
+      if (!this.inputValue) {
+        return;
+      }
+      let type = this.type.split(",")[0];
+      let keywords = this.inputValue;
+      this._searchPublic(type, keywords);
+    },
+    search(_type, value) {
+      let type;
+      let keywords;
+      if (
+        _type &&
+        _type !== "goods" &&
+        _type !== "voucher" &&
+        _type !== "gift"
+      ) {
+        type = this.type.split(",")[0];
+        keywords = this.inputValue;
+      } else if (_type) {
+        type = _type;
+        keywords = value;
+      } else {
+        type = this.type;
+        keywords = value;
+      }
+      this._searchPublic(type, keywords);
+    },
+    cancel() {
+      wx.navigateBack();
+    },
+    delSearch() {
+      this.searchHistory = [];
+      wx.setStorage({
+        key: "search#history",
+        data: []
+      });
+    }
+  };
+  watch = {
+    inputValue() {
+      this.list = [];
+      if (!!this.inputValue && this.showLength === 1) {
+        this.fetchData();
+      }
+    }
+  };
+
+  _searchPublic(type, keywords) {
+    //保存历史搜索记录并且返回上一页
+    let have = false;
+    var History_old = [...this.searchHistory];
+    History_old.forEach(item => {
+      if (item.keywords === keywords) {
+        have = true;
+      }
+    });
+    if (!have) {
+      History_old.push({ type, keywords });
+      wx.setStorage({
+        key: "search#history",
+        data: History_old
+      });
+    }
+    this.$root.$parent.globalData.doSearch = true;
+    this.$root.$parent.globalData.searchKeywords = { type, keywords };
+    if (!this.onSearch) {
+      this.methods.cancel();
+    } else {
+      this.onSearch.call(this);
+    }
+  }
+
+  async fetchData() {
+    let url = "";
+    let opts = {
+      name: this.inputValue,
+      enable: 1
+    };
+    const type = this.type.split(",")[0];
+    if (type === "goods") {
+      url = api.goods;
+      opts.examine_status = 3;
+    }
+    if (type === "voucher") {
+      url = api.vouchers;
+    }
+    if (type === "gift") {
+      url = api.gifts;
+    }
+    const result = await request(url, {
+      data: opts
+    });
+    this.list = result;
+    this.$apply();
+  }
+}
+</script>

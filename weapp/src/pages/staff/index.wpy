@@ -1,0 +1,100 @@
+<style>
+
+</style>
+
+<template>
+  <tabbar :tabs="tabs" :style="tabStyle" :activeIndex.sync="activeIndex">
+    <home hidden="{{activeIndex !== 0}}"/>
+    <check hidden="{{activeIndex !== 1}}"/>
+    <warn hidden="{{activeIndex !== 2}}"/>
+  </tabbar>
+</template>
+
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import TabbarMixin from "@/mixins/tabbar";
+import Tabbar from "@/components/common/tabbar";
+import Home from "@/components/staff/home";
+import Check from "@/components/staff/check";
+import Warn from "@/components/staff/warn";
+
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "银行端"
+  };
+
+  components = {
+    tabbar: Tabbar,
+    home: Home,
+    check: Check,
+    warn: Warn
+  };
+
+  mixins = [TabbarMixin];
+
+  data = {
+    tabs: [
+      {
+        text: "首页",
+        iconPath: "/images/staff/shouye_1.png",
+        selectedIconPath: "/images/staff/shouye_2.png",
+        component: "home"
+      },
+      {
+        text: "核销",
+        iconPath: "/images/staff/hexiao_1.png",
+        selectedIconPath: "/images/staff/hexiao_2.png",
+        component: "check",
+        showPage: false
+      },
+      {
+        text: "预警",
+        iconPath: "/images/staff/yujing_1.png",
+        selectedIconPath: "/images/staff/yujing_2.png",
+        component: "warn",
+        enableReachBottom: true
+      }
+    ],
+    tabStyle: {
+      color: "#888",
+      selectedColor: "#f8a312",
+      backgroundColor: "#fff",
+      borderColor: "#bbb"
+    },
+    activeIndex: 0
+  };
+
+  onLoad() {
+    this.fetchStaffInfo();
+  }
+
+  async fetchStaffInfo() {
+    let { cookies, role, openid } = this.$parent.globalData;
+    // 未登录
+    if (!cookies) {
+      return this.$redirect("/pages/auth/sign?action=signIn&role=" + role);
+    }
+
+    // 同步信息
+    try {
+      const staff = await request(api.currentStaff, {
+        header: { Cookie: cookies },
+        data: { include: "netspot", openid }
+      });
+      if (!staff) {
+        throw Error();
+      }
+      this.$parent.globalData.staff = staff;
+      this.$parent.globalData.staffId = staff.id;
+      // 刷新
+      this.$wxpage.onShow();
+    } catch (err) {
+      console.error(err.message);
+      // this.$redirect("/pages/auth/sign?action=signIn&role=" + role);
+      this.$redirect("/pages/auth/sign?action=signIn&role=");
+    }
+  }
+}
+</script>

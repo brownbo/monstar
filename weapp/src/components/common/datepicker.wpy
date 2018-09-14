@@ -1,0 +1,233 @@
+<style>
+.date-picker {
+  z-index: 99;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translate(0, 100%);
+  transition: transform 0.3s;
+  background-color: #fff;
+}
+
+.date-picker-show {
+  transform: translate(0, 0);
+}
+
+.date-picker .date-picker-header {
+  padding: 40px 30rpx;
+  display: flex;
+  align-items: center;
+}
+
+.date-picker-btns {
+  flex: 1;
+  text-align: right;
+}
+
+.zan-btn--primary {
+  color: #ff9900 !important;
+  border-color: #ffaa00 !important;
+}
+
+.zan-btn--small {
+  height: 26px !important;
+  line-height: 26px !important;
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  border-color: #bbb;
+}
+
+.date-picker-switch {
+  border: 1px solid #bbb;
+  background-color: #eee;
+  text-align: center;
+  padding: 8rpx 40rpx;
+  border-radius: 18px;
+  font-size: 13px;
+}
+
+.date-picker-switch text {
+  vertical-align: middle;
+}
+.date-picker-switch image {
+  width: 48rpx;
+  height: 48rpx;
+  vertical-align: middle;
+}
+
+.date-picker-divider {
+  margin: 0 40rpx;
+  color: #888;
+}
+.date-picker-month {
+  margin: 0 20rpx;
+}
+
+.date-picker-day {
+  display: flex;
+}
+
+.date-picker-values {
+  padding: 30rpx;
+  font-size: 14px;
+}
+
+.date-picker-value {
+  flex: 1;
+  border-bottom: 0.5px solid #bbb;
+  color: #333;
+  padding-bottom: 16rpx;
+  text-align: center;
+}
+.date-picker-value-active {
+  border-color: #ffaa00;
+  color: #ff9900;
+}
+
+.date-picker-value-placeholder {
+  color: #bbb;
+}
+
+.date-picker-item {
+  text-align: center;
+  line-height: 40px;
+  font-size: 15px;
+}
+
+.m-r-4 {
+  margin-right: 40rpx;
+}
+</style>
+
+<template>
+  <view class="date-picker {{show ? 'date-picker-show' : ''}}">
+    <view class="date-picker-header">
+      <view class="date-picker-switch" @tap="bindSwitch">
+        <text>{{switchTitle}}</text>
+        <image src="/images/switch.png"/>
+      </view>
+      <view class="date-picker-btns">
+        <button class="zan-btn zan-btn--small zan-btn--plain m-r-4 {{showConfirm ? 'zan-btn--primary' : ''}}" @tap="bindConfirm" disabled="{{!showConfirm}}">确定</button>
+        <button class="zan-btn zan-btn--small zan-btn--plain m-r-4" @tap="bindCancel">取消</button>
+      </view>
+    </view>
+    <view class="date-picker-values">
+      <picker wx:if="{{isByMonth}}" value="{{pickerEnd}}" mode="date" start="{{pickerStart}}" end="{{pickerEnd}}" fields="month" bindchange="bindPickerChange">
+        <view @tap='bindStartMonth' class="date-picker-month date-picker-value {{!!startMonth ? '' : 'date-picker-value-placeholder'}} {{activeFlag === 0 ? 'date-picker-value-active' : ''}}}}">
+          {{startMonth || '选择月份'}}
+        </view>
+      </picker>
+      <view class="date-picker-day" wx:if="{{!isByMonth}}">
+        <picker mode="date" start="{{picker1Start}}" end="{{picker1End}}" bindchange="bindPickerChange" class="date-picker-value {{!!startDate ? '' : 'date-picker-value-placeholder'}} {{activeFlag === 1 ? 'date-picker-value-active' : ''}}">
+          <view @tap="bindStartDate">{{startDate || '开始时间'}}</view>
+        </picker>
+        <view class="date-picker-divider">至</view>
+        <picker mode="date" start="{{picker2Start}}" end="{{picker2End}}" bindchange="bindPickerChange" class="date-picker-value {{!!endDate ? '' : 'date-picker-value-placeholder'}} {{activeFlag === 2 ? 'date-picker-value-active' : ''}}">
+          <view @tap="bindEndDate">{{endDate || '结束时间'}}</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from "wepy";
+import { getLocaleDateString } from "@/utils/format";
+export default class extends wepy.component {
+  props = {
+    show: {
+      type: Boolean,
+      default: false,
+      twoWay: true
+    }
+  };
+
+  pickerNow = getLocaleDateString(new Date());
+
+  data = {
+    isByMonth: true,
+    startDate: "",
+    endDate: "",
+    startMonth: "",
+    activeFlag: -1,
+    pickerStart: "1990-01-01",
+    picker1Start: "1990-01-01",
+    picker2Start: "1990-01-01",
+    pickerEnd: this.pickerNow,
+    picker1End: this.pickerNow,
+    picker2End: this.pickerNow
+  };
+
+  watch = {
+    show(isShow) {
+      if (isShow) {
+        this.reset();
+      }
+    }
+  };
+
+  computed = {
+    switchTitle() {
+      return this.isByMonth ? "按月选择" : "按日选择";
+    },
+    showConfirm() {
+      return this.isByMonth
+        ? !!this.startMonth
+        : !!this.startDate || !!this.endDate;
+    }
+  };
+
+  reset() {
+    this.activeFlag = -1;
+    this.$apply();
+  }
+
+  showDatePicker(show = true) {
+    this.show = show;
+    this.$apply();
+  }
+
+  methods = {
+    bindConfirm() {
+      this.show = false;
+      if (this.isByMonth) {
+        this.$emit("onDateConfirm", this.startMonth, this.startMonth, "month");
+      } else {
+        this.$emit("onDateConfirm", this.startDate, this.endDate, "day");
+      }
+    },
+    bindCancel() {
+      this.show = false;
+      this.$emit("onDateCancel", "cancel");
+    },
+    bindSwitch() {
+      this.isByMonth = !this.isByMonth;
+    },
+    bindStartMonth() {
+      this.activeFlag = 0;
+    },
+    bindStartDate() {
+      this.activeFlag = 1;
+    },
+    bindEndDate() {
+      this.activeFlag = 2;
+    },
+    bindPickerChange(e) {
+      if (this.isByMonth) {
+        this.startMonth = e.detail.value;
+        this.activeFlag = -1;
+      } else if (this.activeFlag === 1) {
+        this.startDate = e.detail.value;
+        this.picker2Start = this.startDate;
+        this.activeFlag = 0;
+      } else if (this.activeFlag === 2) {
+        this.endDate = e.detail.value;
+        this.picker1End = this.endDate;
+        this.activeFlag = 0;
+      }
+    }
+  };
+}
+</script>

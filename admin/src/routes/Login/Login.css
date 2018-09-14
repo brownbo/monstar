@@ -1,0 +1,196 @@
+/*
+ * @Author: zhengyinhua 
+ * @Date: 2018-03-28 13:00:39 
+ * @Last Modified by: zhengyinhua
+ * @Last Modified time: 2018-05-17 11:17:38
+ */
+ 
+.body{ 
+  position: relative;
+  height: 100vh;
+  width:100vw;
+  
+  background: url(../../assets/img/bj.png) no-repeat;
+  background-size: 100%;
+  background-position: bottom;
+  background-color: #d9f0ef;
+}
+.center_div{
+  display: flex;
+  position: absolute;
+  z-index: 9999;
+  top: 50%;
+  left: 50%;
+  flex-direction: column;
+  margin-top: -10.937rem;
+  margin-left: -12.5rem;
+}
+.sysname{
+  margin-bottom:1.25rem;
+  width: 24.31rem;
+  height: 4.375rem;
+  background-size: 60%;
+  background-image: url(../../assets/img/biaoti.png);
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.sub_btn{
+  cursor: pointer;
+  width: 5rem;
+  height: 5rem;
+  background-size: 3.75rem;
+  background-image: url(../../assets/img/jt.png);
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.flex{
+  display: flex;
+}
+.form_left{
+  border-bottom-left-radius: 6px;
+  border-top-left-radius: 6px;
+  flex:1;
+  padding:24px 1.875rem 0px 24px;
+  background-color: #e8f6ff;
+}
+.form_right{
+  border-bottom-right-radius: 6px;
+  border-top-right-radius: 6px;
+  width: 120px;
+  display: flex; 
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+}
+.form_right img{
+  width: 1.875rem;
+  height: 1.875rem;
+}
+.form {
+  border-radius: 6px;
+  width: 400px;
+  border: 1px #90c2c3  solid;
+  box-shadow: 10px 10px 1.25rem rgba(131, 162, 247, 0.8)
+}
+.my_input_u input{
+  border:1px #0099ff solid;
+  padding-left: 40px;
+  line-height: 40px;
+  height: 40px;
+  
+}
+.my_input_u::after{
+  position: absolute;
+  display: visible !important;
+  width: 1.25rem;
+  height: 40px;
+  background-image: url(../../assets/img/yhm.png);
+  background-repeat: no-repeat;
+  background-position: left;
+  background-size: 18px;
+  left: 10px;
+  top: 0px;
+}
+.my_input_p input{
+  border:1px #0099ff solid;
+  padding-left: 40px;
+  line-height: 40px;
+  height: 40px;
+}
+.my_input_p::after{
+  position: absolute;
+  display: visible !important;
+  width: 1.25rem;
+  height: 40px;
+  background-image: url(../../assets/img/mm.png);
+  background-repeat: no-repeat;
+  background-position: left;
+  background-size: 18px;
+  left: 10px;
+  top: 0px;
+}
+.form button {
+  width: 100%;
+}
+.body :global( .ant-row:after){
+  visibility: visible;
+}
+.flex_center :global(.has-error.has-feedback:after){
+  line-height: 40px;
+  height: 40px;
+}
+.flex_center :global(.has-success.has-feedback:after){
+  line-height: 40px;
+  height: 40px;
+}
+.body :global(.ant-form-item){
+  margin-bottom: 18px !important;
+}
+.body :global(.ant-form-item-with-help){
+  margin-bottom: 0px !important;
+}
+.flex_center{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.logo_div{
+  padding:1.875rem 0px 0px 3.125rem;
+
+}
+.logo_img{
+  width: 396px;
+  height: 78px;
+  background-image: url(../../assets/img/logo.png);
+  background-repeat: no-repeat;
+  background-position: left;
+  background-size: 60%;
+}
+.logo_text{
+  padding-left: 0.625rem;
+  flex: 1;
+  text-align: justify;
+}
+.logo_text_cn{
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+.logo_text_en{ 
+  font-weight: 700;
+}
+
+p {
+  color: rgb(204, 204, 204);
+  text-align: center;
+  margin-top: 16px;
+
+}
+
+
+.logo {
+  text-align: center;
+  height: 40px;
+  line-height: 40px;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+
+.logo img {
+  width: 40px;
+  margin-right: 8px;
+}
+
+.logo span {
+  vertical-align: text-bottom;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+
+.ant-spin-container,
+.ant-spin-nested-loading {
+  height: 100%;
+}
+.forgot{
+  float: right;
+}

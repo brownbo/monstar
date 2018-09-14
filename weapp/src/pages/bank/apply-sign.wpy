@@ -1,0 +1,249 @@
+<style>
+.apply-sign-tab {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+.zan-tab__item--selected .zan-tab__title {
+  color: #f60;
+  border-color: #f60;
+}
+.apply-sign-content {
+  margin-top: 45px;
+  padding-bottom: 50px;
+}
+.apply-sign-item {
+  background: #fff;
+  margin-bottom: 20rpx;
+}
+
+.apply-sign-item:last-child {
+  margin-bottom: 0;
+}
+.apply-sign-item-header {
+  padding: 20rpx;
+  font-size: 13px;
+  color: #ff9900;
+}
+.apply-sign-item-detail {
+  padding: 20rpx;
+  background: #f8f8f8;
+  display: flex;
+}
+.apply-sign-item-img {
+  width: 160rpx;
+  height: 160rpx;
+}
+.m-r-3 {
+  margin-right: 30rpx;
+}
+
+.m-t-1 {
+  margin-top: 10rpx;
+}
+
+.m-b-2 {
+  margin-bottom: 20rpx;
+}
+.m-l-2 {
+  margin-left: 20rpx;
+}
+.title {
+  font-size: 15px;
+  color: #000;
+}
+.subtitle {
+  font-size: 13px;
+  color: #333;
+}
+.apply-sign-item-btns {
+  text-align: right;
+  padding: 20rpx;
+}
+.count {
+  color: #ff9900;
+  font-size: 16px;
+}
+
+.apply-sign-item-btns .zan-btn--small {
+  height: 26px !important;
+  line-height: 26px !important;
+}
+
+.apply-sign-fixed-footer .zan-btn--primary {
+  background-color: #f90;
+}
+
+.apply-sign-fixed-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+</style>
+<template>
+  <view>
+    <view class="apply-sign-header"></view>
+    <view class="apply-sign-tab zan-tab">
+      <view class="zan-tab__bd">
+        <repeat for="{{tabs}}" key="index" index="index" item="item">
+          <view @tap="changeTab({{index}})" class="zan-tab__item {{activeTabIndex === index ? 'zan-tab__item--selected' : ''}}">
+            <view class="zan-tab__title">{{item.label}}</view>
+          </view>
+        </repeat>
+      </view>
+    </view>
+    <view class="apply-sign-content">
+      <repeat for="{{records}}" key="index" index="index" item="item">
+        <view class="apply-sign-item">
+          <view class="apply-sign-item-header">{{item.date}}</view>
+          <view class="apply-sign-item-detail">
+            <image class="apply-sign-item-img m-r-3" src="{{item.image}}"/>
+            <view class="apply-sign-item-desc">
+              <view class="title m-t-1 m-b-2">{{item.gift}}</view>
+              <view class="subtitle">数量<text class="m-l-2 count">{{item.count}}</text></view>
+            </view>
+          </view>
+          <view class="apply-sign-item-btns">
+            <navigator wx:if="{{applyShow}}" url="/pages/bank/apply-refund?action=apply&giftId={{item.giftId}}&giftName={{item.gift}}" class="zan-btn zan-btn--small zan-btn--plain zan-btn--primary">再次申请</navigator>
+            <button wx:else @tap="signGift({{item.id}})" class="zan-btn zan-btn--small zan-btn--plain zan-btn--primary">签收</button>          
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <view class="apply-sign-fixed-footer" wx:if="{{action === '申领'}}">
+      <navigator url="/pages/bank/apply-refund?action=apply" class="zan-btn zan-btn--large zan-btn--primary">申领礼品</navigator>
+    </view>
+    <view hidden="{{!noData}}" class="zan-loadmore zan-loadmore--nodata">
+      <view class="zan-loadmore__tips">暂无数据</view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import { api, root } from "@/config";
+import request from "@/utils/request";
+import { getLocaleFullDateString } from "@/utils/format";
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: "申领"
+  };
+
+  signTabs = [
+    { label: "全部", value: "2," },
+    { label: "待签收", value: "2" },
+    { label: "已签收", value: "3" }
+  ];
+  applyTabs = [
+    { label: "全部" },
+    { label: "未审核", value: "0" },
+    { label: "未通过", value: "1" },
+    { label: "已通过", value: "2" }
+  ];
+
+  data = {
+    action: "申领",
+    activeTabIndex: 0,
+    noMore: false,
+    noData: false,
+    records: [],
+    page: 1
+  };
+
+  limit = 10;
+
+  computed = {
+    tabs() {
+      return this.action === "申领" ? this.applyTabs : this.signTabs;
+    },
+    applyShow() {
+      return this.action === "申领";
+    }
+  };
+
+  watch = {
+    activeTabIndex() {
+      setTimeout(() => {
+        this.reset();
+        this.fetchData();
+      }, 0);
+    }
+  };
+
+  methods = {
+    changeTab(index) {
+      if (this.activeTabIndex !== index) {
+        this.activeTabIndex = index;
+      }
+    },
+    signGift(id) {
+      console.log("sign", id);
+    }
+  };
+
+  onReachBottom() {
+    if (!this.noData && !this.noMore) {
+      setTimeout(() => {
+        this.page++;
+        this.fetchData();
+      }, 0);
+    }
+  }
+
+  onLoad({ action }) {
+    if (action === "sign") {
+      this.action = "签收";
+      wx.setNavigationBarTitle({
+        title: this.action
+      });
+    }
+  }
+
+  onShow() {
+    setTimeout(() => {
+      this.reset();
+      this.fetchData();
+    }, 0);
+  }
+
+  reset() {
+    this.page = 1;
+    this.noMore = this.noData = false;
+    this.records = [];
+  }
+
+  async fetchData() {
+    const queries = {
+      page: this.page,
+      limit: this.limit,
+      include: "gift",
+      netspot_id: this.$root.$parent.globalData.staff.netspot_id,
+      order: "application_time DESC"
+    };
+    const status = this.tabs[this.activeTabIndex].value;
+    if (!!status) {
+      queries.status = status;
+    }
+
+    let data = await request(api.examines, { data: queries });
+    data = data.map(item => ({
+      gift: item.gift.name,
+      giftId: item.gift.id,
+      id: item.id,
+      date: getLocaleFullDateString(item.application_time),
+      count: item._count,
+      image: root + item.gift.imgs.split(",")[0]
+    }));
+
+    if (data.length === 0) {
+      this.page === 1 ? (this.noData = true) : (this.noMore = true);
+    } else if (data.length < this.limit) {
+      this.noMore = true;
+    }
+    this.records = this.records.concat(data);
+    this.$apply();
+  }
+}
+</script>
