@@ -8,8 +8,8 @@ import config from '../utils/config';
 import {Layout,message,Icon} from 'antd';
 const {Content} = Layout;
 import Func from '../utils/publicFunc'
-import Login from '../routes/Login';
-import Error from '../routes/error';
+import Login from '../containers/Login';
+import Error from '../containers/error';
 import MyFooter from '../components/MyFooter';
 import MyHeader from '../components/MyHeader';
 import Sidebar from '../components/Sidebar';
@@ -17,6 +17,7 @@ import styles from "../components/app.css"
 
 const getlocationPathnameKey = (menu, locationPath)=> {
   let key;
+  
   const getMenuTree = (nemuObj)=> {
     nemuObj.forEach(item=> {
       if (item.router === `/${locationPath.split('/')[1]}`) {
